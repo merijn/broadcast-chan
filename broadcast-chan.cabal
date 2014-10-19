@@ -42,9 +42,13 @@ Library
   Build-Depends:        base >= 4 && < 5
 
 Source-Repository head
-  Type:     mercurial
-  Location: https://bitbucket.org/merijnv/broadcast-chan
+  Type:     git
+  Location: ssh://github.com:merijn/broadcast-chan.git
 
 Source-Repository head
   Type:     mercurial
-  Location: git+ssh://github.com:merijn/broadcast-chan
+  Location: git+ssh://github.com:merijn/broadcast-chan.git
+
+Source-Repository head
+  Type:     mercurial
+  Location: https://bitbucket.org/merijnv/broadcast-chan
