@@ -3,7 +3,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE Trustworthy #-}
+{-# LANGUAGE Safe #-}
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  Contro.Concurrent.BroadcastChan
@@ -50,11 +50,8 @@ type In = 'In
 type Out = 'Out
 
 -- | The abstract type representing the read or write end of a 'BroadcastChan'.
-data BroadcastChan :: Direction -> * -> * where
-    WriteEnd :: {-# UNPACK #-} !(MVar (Stream a)) -> BroadcastChan In a
-    ReadEnd  :: {-# UNPACK #-} !(MVar (Stream a)) -> BroadcastChan Out a
-
-deriving instance Eq (BroadcastChan i a)
+newtype BroadcastChan (d :: Direction) a = BChan (MVar (Stream a))
+    deriving (Eq)
 
 type Stream a = MVar (ChItem a)
 
@@ -65,13 +62,13 @@ newBroadcastChan :: IO (BroadcastChan In a)
 newBroadcastChan = do
    hole  <- newEmptyMVar
    writeVar <- newMVar hole
-   return (WriteEnd writeVar)
+   return (BChan writeVar)
 
 -- | Write a value to write end of a 'BroadcastChan'. Any messages written
 -- while there are no live read ends can be immediately garbage collected, thus
 -- avoiding space leaks.
 writeBChan :: BroadcastChan In a -> a -> IO ()
-writeBChan (WriteEnd writeVar) val = do
+writeBChan (BChan writeVar) val = do
   new_hole <- newEmptyMVar
   mask_ $ do
     old_hole <- takeMVar writeVar
@@ -80,17 +77,25 @@ writeBChan (WriteEnd writeVar) val = do
 
 -- | Read the next value from the read end of a 'BroadcastChan'.
 readBChan :: BroadcastChan Out a -> IO a
-readBChan (ReadEnd readVar) = do
+readBChan (BChan readVar) = do
   modifyMVarMasked readVar $ \read_end -> do -- Note [modifyMVarMasked]
     (ChItem val new_read_end) <- readMVar read_end
         -- Use readMVar here, not takeMVar,
         -- else dupBroadcastChan doesn't work
     return (new_read_end, val)
 
+-- Note [modifyMVarMasked]
+-- This prevents a theoretical deadlock if an asynchronous exception
+-- happens during the readMVar while the MVar is empty.  In that case
+-- the read_end MVar will be left empty, and subsequent readers will
+-- deadlock.  Using modifyMVarMasked prevents this.  The deadlock can
+-- be reproduced, but only by expanding readMVar and inserting an
+-- artificial yield between its takeMVar and putMVar operations.
+
 -- | Create a new read end for a 'BroadcastChan'. Will receive all messages
 -- written to the channel's write end after the read end's creation.
 newBChanListener :: BroadcastChan In a -> IO (BroadcastChan Out a)
-newBChanListener (WriteEnd writeVar) = do
+newBChanListener (BChan writeVar) = do
    hole       <- readMVar writeVar
    newReadVar <- newMVar hole
-   return (ReadEnd newReadVar)
+   return (BChan newReadVar)
