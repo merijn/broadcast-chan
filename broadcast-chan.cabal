@@ -33,12 +33,49 @@ Description:
     ends. As a result, any messages written to the write end can be immediately
     garbage collected if there are no active read ends, avoding space leaks.
 
+Flag benchmark
+  Description:        Benchmarks depend on an unreleased version of
+                      Criterion, making them unbuildable without sanboxes.
+  Default:            True
+  Manual:             False
+
+Flag sync
+  Description:        Benchmarks synchronisation primitives used in main
+                      benchmark.
+  Default:            True
+  Manual:             False
+
+Flag threaded
+  Description:        Run benchmarks with threaded backend.
+  Default:            True
+  Manual:             False
+
 Library
   Default-Language:     Haskell2010
   GHC-Options:          -Wall -O2 -fno-warn-unused-do-bind
   Exposed-Modules:      Control.Concurrent.BroadcastChan
 
   Build-Depends:        base >= 4 && < 5
+
+Benchmark sync
+  Default-Language:     Haskell2010
+  Type:                 exitcode-stdio-1.0
+  Main-Is:              Sync.hs
+  GHC-Options:          -Wall -O2 -Wno-orphans
+  if flag(threaded)
+    GHC-Options:        -threaded
+  Hs-Source-Dirs:       benchmarks
+
+  if flag(benchmark) && flag(sync)
+    Buildable:          True
+  else
+    Buildable:          False
+
+  Build-Depends:        base >= 4 && < 5
+               ,        atomic-primops
+               ,        criterion
+               ,        deepseq
+               ,        stm
 
 Source-Repository head
   Type:     git
