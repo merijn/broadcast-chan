@@ -35,7 +35,7 @@ Description:
 
 Library
   Default-Language:     Haskell2010
-  GHC-Options:          -Wall -fno-warn-unused-do-bind
+  GHC-Options:          -Wall -O2 -fno-warn-unused-do-bind
   Exposed-Modules:      Control.Concurrent.BroadcastChan
 
   Build-Depends:        base >= 4 && < 5
@@ -43,10 +43,6 @@ Library
 Source-Repository head
   Type:     git
   Location: ssh://github.com:merijn/broadcast-chan.git
-
-Source-Repository head
-  Type:     mercurial
-  Location: git+ssh://github.com:merijn/broadcast-chan.git
 
 Source-Repository head
   Type:     mercurial
