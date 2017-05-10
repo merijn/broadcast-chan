@@ -19,12 +19,11 @@ import GHC.Conc (getNumProcessors)
 instance NFData (IO ()) where
     rnf !_ = ()
 
-benchSync :: (Int -> IO (IO (), IO ())) -> Int -> Benchmark
-benchSync alloc i = bench name . perRunEnv setup $ \(start, wait) -> do
+benchSync :: (Int -> IO (IO (), IO ())) -> Int -> Benchmarkable
+benchSync alloc i = perRunEnv setup $ \(start, wait) -> do
     putMVar start ()
     wait
   where
-    name = show i ++ " threads"
     setup = do
         start <- newEmptyMVar
         (signal, wait) <- alloc i
@@ -34,24 +33,35 @@ benchSync alloc i = bench name . perRunEnv setup $ \(start, wait) -> do
         return (start, wait)
 {-# INLINE benchSync #-}
 
-benchSTM :: (Int -> IO (STM (), STM ())) -> Int -> Benchmark
+benchSTM :: (Int -> IO (STM (), STM ())) -> Int -> Benchmarkable
 benchSTM alloc = benchSync $ \i -> do
     (signal, wait) <- alloc i
     return (atomically signal, atomically wait)
 {-# INLINE benchSTM #-}
 
-syncGeneral :: String -> (Int -> IO (IO (), IO ())) -> [Int] -> Benchmark
-syncGeneral s alloc is = bgroup s $ map (benchSync alloc) is
+generalSync :: (a -> Int -> Benchmarkable) -> String -> a -> [Int] -> Benchmark
+generalSync build s alloc = bgroup s . map labelledBench
+  where
+    labelledBench i = bench (show i ++ " threads") $ build alloc i
+{-# INLINE generalSync #-}
 
-stmGeneral :: String -> (Int -> IO (STM (), STM ())) -> [Int] -> Benchmark
-stmGeneral s alloc is = bgroup s $ map (benchSTM alloc) is
+syncGeneral :: String -> (Int -> IO (IO (), IO ())) -> [Int] -> Benchmark
+syncGeneral = generalSync benchSync
+{-# INLINE syncGeneral #-}
+
+syncSTM :: String -> (Int -> IO (STM (), STM ())) -> [Int] -> Benchmark
+syncSTM = generalSync benchSTM
+{-# INLINE syncSTM #-}
 
 syncSingleWaitSTM :: String -> (IO (STM (), STM ())) -> [Int] -> Benchmark
-syncSingleWaitSTM s alloc = bgroup s . sequence
-    [ bgroup "single transaction" . map (benchSTM singleTransaction)
-    , bgroup "multi transaction" . map (benchSync multiTransaction)
-    ]
+syncSingleWaitSTM s alloc = bgroup s . map labelledBenches
   where
+    labelledBenches :: Int -> Benchmark
+    labelledBenches i = bgroup (show i ++ " threads") $ i & sequence
+        [ bench "single transaction" . benchSTM singleTransaction
+        , bench "multi transaction" . benchSync multiTransaction
+        ]
+
     singleTransaction :: Int -> IO (STM (), STM ())
     singleTransaction i = do
         (signal, wait) <- alloc
@@ -69,8 +79,8 @@ syncAtomicCounter :: [Int] -> Benchmark
 syncAtomicCounter = syncGeneral "AtomicCounter" $ \i -> do
     cnt <- newCounter 0
     let spinLoop = do
-            yield
             n <- readCounter cnt
+            yield
             when (n /= i) spinLoop
         {-# INLINE spinLoop #-}
     return (void (incrCounter 1 cnt), spinLoop)
@@ -119,7 +129,9 @@ syncTChan = syncSingleWaitSTM "TChan" $ do
 syncTMVar :: [Int] -> Benchmark
 syncTMVar = syncGeneral "TMVar" $ \i -> do
     tmvar <- newEmptyTMVarIO
-    return (atomically (putTMVar tmvar ()), replicateM_ i (atomically (takeTMVar tmvar)))
+    let signal = atomically $ putTMVar tmvar ()
+        wait = replicateM_ i . atomically $ takeTMVar tmvar
+    return (signal, wait)
 {-# INLINE syncTMVar #-}
 
 syncTQueue :: [Int] -> Benchmark
@@ -135,7 +147,7 @@ syncTSem = syncSingleWaitSTM "TSem" $ do
 {-# INLINE syncTSem #-}
 
 syncTVar :: [Int] -> Benchmark
-syncTVar = stmGeneral "TVar" $ \i -> do
+syncTVar = syncSTM "TVar" $ \i -> do
     tvar <- newTVarIO 0
     return (modifyTVar' tvar (+1), check . (==i) =<< readTVar tvar)
 {-# INLINE syncTVar #-}
