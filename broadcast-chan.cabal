@@ -74,6 +74,7 @@ Benchmark sync
   Build-Depends:        base >= 4 && < 5
                ,        atomic-primops
                ,        criterion
+               ,        containers
                ,        deepseq
                ,        stm
 
