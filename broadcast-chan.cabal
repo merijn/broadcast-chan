@@ -72,6 +72,7 @@ Benchmark sync
     Buildable:          False
 
   Build-Depends:        base >= 4 && < 5
+               ,        async
                ,        atomic-primops
                ,        criterion
                ,        containers

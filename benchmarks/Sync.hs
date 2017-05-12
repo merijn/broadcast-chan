@@ -3,6 +3,8 @@
 import Criterion.Main
 
 import Control.Concurrent (forkIO, setNumCapabilities, yield)
+import Control.Concurrent.Async hiding (wait)
+import qualified Control.Concurrent.Async as Async
 import Control.Concurrent.Chan
 import Control.Concurrent.MVar
 import Control.Concurrent.QSem
@@ -10,7 +12,7 @@ import Control.Concurrent.QSemN
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TSem
 import Control.DeepSeq (NFData(..))
-import Control.Monad (replicateM_, void, when)
+import Control.Monad (replicateM, replicateM_, void, when)
 import Data.Atomics.Counter
 import Data.IORef
 import Data.Function ((&))
@@ -74,6 +76,21 @@ syncSingleWaitSTM s alloc = bgroup s . map labelledBenches
         return (atomically signal, replicateM_ i (atomically wait))
     {-# INLINE multiTransaction #-}
 {-# INLINE syncSingleWaitSTM #-}
+
+syncAsync :: [Int] -> Benchmark
+syncAsync = generalSync run "Async" ()
+  where
+    setup i = do
+        start <- newEmptyMVar
+        threads <- replicateM i . async $ readMVar start
+        return (start, mapM_ Async.wait threads)
+    {-# INLINE setup #-}
+
+    run () i = perRunEnv (setup i) $ \(start, wait) -> do
+        putMVar start()
+        wait
+    {-# INLINE run #-}
+{-# INLINE syncAsync #-}
 
 syncAtomicCounter :: [Int] -> Benchmark
 syncAtomicCounter = syncGeneral "AtomicCounter" $ \i -> do
@@ -156,7 +173,8 @@ main :: IO ()
 main = do
     getNumProcessors >>= setNumCapabilities
     defaultMain $ [1, 2, 5, 10, 100, 1000, 10000] & sequence
-      [ syncAtomicCounter
+      [ syncAsync
+      , syncAtomicCounter
       , syncChan
       , syncIORef
       , syncMVar
