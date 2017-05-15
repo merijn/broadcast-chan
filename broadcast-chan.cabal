@@ -79,6 +79,27 @@ Benchmark sync
                ,        deepseq
                ,        stm
 
+Benchmark channels
+  Default-Language:     Haskell2010
+  Type:                 exitcode-stdio-1.0
+  Main-Is:              Channels.hs
+  GHC-Options:          -Wall -O2 -Wno-orphans -fno-warn-unused-do-bind
+  if flag(threaded)
+    GHC-Options:        -threaded
+  Hs-Source-Dirs:       benchmarks
+
+  if flag(benchmark)
+    Buildable:          True
+  else
+    Buildable:          False
+
+  Build-Depends:        base >= 4 && < 5
+               ,        async
+               ,        broadcast-chan
+               ,        criterion
+               ,        deepseq
+               ,        stm
+
 Source-Repository head
   Type:     git
   Location: ssh://github.com:merijn/broadcast-chan.git
