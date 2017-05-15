@@ -154,15 +154,12 @@ benchReads :: ChanType -> Benchmark
 benchReads Chan{..} =
   bench chanName $ perBatchEnv (\i -> allocChan i i) takeChan
 
-benchConcurrent :: ChanType -> Config -> Benchmark
-benchConcurrent Chan{..} Config{..} =
+benchConcurrent :: Config -> ChanType -> Benchmark
+benchConcurrent Config{..} Chan{..} =
   if broadcast && not canBroadcast
      then bgroup "" []
-     else bench name $ perRunEnv setupConcurrent id
+     else bench chanName $ perRunEnv setupConcurrent id
   where
-    name :: String
-    name = show numMsgs ++ " messages"
-
     splitMsgs :: Integral a => a -> [Int64]
     splitMsgs = splitEqual numMsgs . fromIntegral
 
@@ -194,9 +191,10 @@ benchConcurrent Chan{..} Config{..} =
         return $ putMVar start () >> mapM_ wait (wThreads ++ rThreads)
 {-# INLINE benchConcurrent #-}
 
-runConcurrent :: [Int] -> [Int] -> [Int64] -> Bool -> ChanType -> Benchmark
-runConcurrent writerCounts readerCounts msgs broadcast chan =
-    bgroup (chanName chan) $ map makeBenchGroup threads
+runConcurrent
+    :: String -> [Int] -> [Int] -> [Int64] -> Bool -> [ChanType] -> Benchmark
+runConcurrent typeName writerCounts readerCounts msgs broadcast chans =
+    bgroup typeName $ map makeBenchGroup threads
   where
     threads = do
         ws <- writerCounts
@@ -205,15 +203,19 @@ runConcurrent writerCounts readerCounts msgs broadcast chan =
         return (ws, rs)
 
     makeBenchGroup :: (Int, Int) -> Benchmark
-    makeBenchGroup (writers, readers) = bgroup name $ map makeBenchmark msgs
+    makeBenchGroup (writers, readers) = bgroup groupName $ map mkBench msgs
         where
-          name :: String
-          name | writers == 0 = show readers
-               | readers == 0 = show writers
-               | otherwise = show writers ++ " to " ++ show readers
+          groupName :: String
+          groupName
+              | writers == 0 = show readers ++ " readers"
+              | readers == 0 = show writers ++ " writers"
+              | otherwise = show writers ++ " to " ++ show readers
 
-          makeBenchmark :: Int64 -> Benchmark
-          makeBenchmark numMsgs = benchConcurrent chan Config{..}
+          mkBench :: Int64 -> Benchmark
+          mkBench numMsgs =
+              bgroup name $ map (benchConcurrent Config{..}) chans
+            where
+              name = show numMsgs ++ " messages"
 
 chanTypes :: [ChanType]
 chanTypes =
@@ -235,20 +237,20 @@ main = do
     [ bgroup "Write" $ map benchWrites writeChanTypes
     , bgroup "Read" $ map benchReads chanTypes
     , bgroup "Concurrent"
-        [ bgroup "Write" $ map (runConcurrentWrites False) writeChanTypes
-        , bgroup "Read" $ map (runConcurrentWrites False) chanTypes
-        , bgroup "Read-Write" $ map (runConcurrentBench False) chanTypes
+        [ runConcurrentWrites False writeChanTypes
+        , runConcurrentWrites False chanTypes
+        , runConcurrentBench False chanTypes
         ]
     , bgroup "Concurrent Broadcast"
-        [ bgroup "Write" $ map (runConcurrentWrites True) chanTypes
-        , bgroup "Read" $ map (runConcurrentReads True) chanTypes
-        , bgroup "Read-Write" $ map (runConcurrentBench True) chanTypes
+        [ runConcurrentWrites True chanTypes
+        , runConcurrentReads True chanTypes
+        , runConcurrentBench True chanTypes
         ]
     ]
   where
-    threadCounts = [1,2,5,10,100,1000,1e4]
+    threads = [1,2,5,10,100,1000,1e4]
     msgCounts = [100,1000,1e4,1e5,1e6]
 
-    runConcurrentBench = runConcurrent threadCounts threadCounts msgCounts
-    runConcurrentWrites = runConcurrent threadCounts [0] msgCounts
-    runConcurrentReads = runConcurrent [0] threadCounts msgCounts
+    runConcurrentBench = runConcurrent "Read-Write" threads threads msgCounts
+    runConcurrentWrites = runConcurrent "Write" threads [0] msgCounts
+    runConcurrentReads = runConcurrent "Read" [0] threads msgCounts
