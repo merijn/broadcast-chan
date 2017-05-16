@@ -1,13 +1,12 @@
 {-# LANGUAGE AutoDeriveTypeable #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE Safe #-}
 -------------------------------------------------------------------------------
 -- |
--- Module      :  Contro.Concurrent.BroadcastChan
--- Copyright   :  (C) 2014 Merijn Verstraaten
+-- Module      :  BroadcastChan
+-- Copyright   :  (C) 2014-2017 Merijn Verstraaten
 -- License     :  BSD-style (see the file LICENSE)
 -- Maintainer  :  Merijn Verstraaten <merijn@inconsistent.nl>
 -- Stability   :  experimental
@@ -27,41 +26,34 @@
 -- ends. As a result, any messages written to the write end can be immediately
 -- garbage collected if there are no active read ends, avoding space leaks.
 -------------------------------------------------------------------------------
-module Control.Concurrent.BroadcastChan
-    ( BChanError
-    , BroadcastChan
+module BroadcastChan
+    ( BroadcastChan
+    , Direction(..)
     , In
     , Out
     , newBroadcastChan
+    , newBChanListener
+    , readBChan
+    , writeBChan
     , closeBChan
     , isClosedBChan
-    , writeBChan
-    , writeBChan_
-    , readBChan
-    , readBChan_
-    , newBChanListener
     ) where
 
-import Control.Monad (when)
 import Control.Concurrent.MVar
-import Control.Exception (Exception, mask_, throwIO)
+import Control.Exception (mask_)
 import GHC.Generics (Generic)
 
--- | Exception type for 'BroadcastChan' operations.
-data BChanError
-    = WriteFailed   -- ^ Attempted to write to closed 'BroadcastChan'
-    | ReadFailed    -- ^ Attempted to read from closed 'BroadcastChan'
-    deriving (Eq, Read, Show)
-
-instance Exception BChanError
-
-data Direction = In | Out
+-- | Used with DataKinds as phantom type indicating whether a 'BroadcastChan'
+-- value is a read or write end.
+data Direction = In  -- ^ Indicates a write 'BroadcastChan'
+               | Out -- ^ Indicates a read 'BroadcastChan'
 
 -- | Alias for the 'In' type from the 'Direction' kind, allows users to write
--- the 'BroadcastChan In a' type without enabling DataKinds.
+-- the @'BroadcastChan' 'In' a@ type without enabling DataKinds.
 type In = 'In
+
 -- | Alias for the 'Out' type from the 'Direction' kind, allows users to write
--- the 'BroadcastChan Out a' type without enabling DataKinds.
+-- the @'BroadcastChan' 'Out' a@ type without enabling DataKinds.
 type Out = 'Out
 
 -- | The abstract type representing the read or write end of a 'BroadcastChan'.
@@ -84,6 +76,7 @@ newBroadcastChan = do
 closeBChan :: BroadcastChan In a -> IO Bool
 closeBChan (BChan writeVar) = mask_ $ do
     old_hole <- takeMVar writeVar
+    -- old_hole is always empty unless the channel was already closed
     tryPutMVar old_hole Closed <* putMVar writeVar old_hole
 
 -- | Check whether a 'BroadcastChan' is closed. Beware of TOC-TOU races,
@@ -110,18 +103,13 @@ writeBChan (BChan writeVar) val = do
   new_hole <- newEmptyMVar
   mask_ $ do
     old_hole <- takeMVar writeVar
+    -- old_hole is only full if the channel was previously closed
     empty <- tryPutMVar old_hole (ChItem val new_hole)
     if empty
        then putMVar writeVar new_hole
        else putMVar writeVar old_hole
     return empty
-
--- | Like 'writeBChan', but throws a 'WriteFailed' exception when writing to
--- closed 'BroadcastChan'.
-writeBChan_ :: BroadcastChan In a -> a -> IO ()
-writeBChan_ ch val = do
-    success <- writeBChan ch val
-    when (not success) $ throwIO WriteFailed
+{-# INLINE writeBChan #-}
 
 -- | Read the next value from the read end of a 'BroadcastChan'. Returns
 -- 'Nothing' if the 'BroadcastChan' is closed and empty. See 'readBChan_' for
@@ -135,15 +123,7 @@ readBChan (BChan readVar) = do
     case result of
         (ChItem val new_read_end) -> return (new_read_end, Just val)
         Closed -> return (read_end, Nothing)
-
--- | Like 'readBChan', but throws a 'ReadFailed' exception when reading from a
--- closed and empty 'BroadcastChan'.
-readBChan_ :: BroadcastChan Out a -> IO a
-readBChan_ ch = do
-    result <- readBChan ch
-    case result of
-        Nothing -> throwIO ReadFailed
-        Just x -> return x
+{-# INLINE readBChan #-}
 
 -- Note [modifyMVarMasked]
 -- This prevents a theoretical deadlock if an asynchronous exception

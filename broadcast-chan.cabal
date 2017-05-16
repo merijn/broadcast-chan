@@ -36,24 +36,31 @@ Description:
 Flag benchmark
   Description:        Benchmarks depend on an unreleased version of
                       Criterion, making them unbuildable without sanboxes.
-  Default:            True
-  Manual:             False
+  Default:            False
+  Manual:             True
 
 Flag sync
   Description:        Benchmarks synchronisation primitives used in main
                       benchmark.
-  Default:            True
-  Manual:             False
+  Default:            False
+  Manual:             True
 
 Flag threaded
   Description:        Run benchmarks with threaded backend.
-  Default:            True
-  Manual:             False
+  Default:            False
+  Manual:             True
 
 Library
   Default-Language:     Haskell2010
   GHC-Options:          -Wall -O2 -fno-warn-unused-do-bind
-  Exposed-Modules:      Control.Concurrent.BroadcastChan
+  Exposed-Modules:      BroadcastChan
+                        BroadcastChan.Throw
+
+  Other-Extensions:     AutoDeriveTypeable
+                        DataKinds
+                        DeriveGeneric
+                        KindSignatures
+                        Safe
 
   Build-Depends:        base >= 4 && < 5
 

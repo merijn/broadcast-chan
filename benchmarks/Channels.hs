@@ -7,7 +7,8 @@ import Criterion.Main
 
 import Control.Concurrent (setNumCapabilities)
 import Control.Concurrent.Async
-import Control.Concurrent.BroadcastChan
+import BroadcastChan
+import qualified BroadcastChan.Throw as Throw
 import Control.Concurrent.Chan
 import Control.Concurrent.MVar
 import Control.Concurrent.STM
@@ -70,15 +71,14 @@ benchBChan = Chan "BroadcastChan" True $ \_size numMsgs -> do
 {-# INLINE benchBChan #-}
 
 benchBChanExcept :: ChanType
-benchBChanExcept = Chan "BroadcastChan (except)" True $ \_size numMsgs -> do
+benchBChanExcept = Chan "BroadcastChan.Throw" True $ \_size numMsgs -> do
     chan <- newBroadcastChan
     listener <- newBChanListener chan
     replicateM_ numMsgs $ writeBChan chan ()
-    return (writeBChan_ chan (), readBChan_ listener)
     return ChanOps
-        { putChan = writeBChan_ chan ()
-        , takeChan = readBChan_ listener
-        , dupTake = readBChan_ <$> newBChanListener chan
+        { putChan = Throw.writeBChan chan ()
+        , takeChan = Throw.readBChan listener
+        , dupTake = Throw.readBChan <$> newBChanListener chan
         }
 {-# INLINE benchBChanExcept #-}
 
@@ -93,10 +93,10 @@ benchBChanDrop = Chan "BroadcastChan (drop)" False $ \_ _ -> do
 {-# INLINE benchBChanDrop #-}
 
 benchBChanDropExcept :: ChanType
-benchBChanDropExcept = Chan "BroadcastChan (drop-except)" False $ \_ _ -> do
+benchBChanDropExcept = Chan "BroadcastChan.Throw (drop)" False $ \_ _ -> do
     chan <- newBroadcastChan
     return ChanOps
-        { putChan = writeBChan_ chan ()
+        { putChan = Throw.writeBChan chan ()
         , takeChan = fail "Dropping BroadcastChan doesn't support reading."
         , dupTake = fail "Dropping BroadcastChan doesn't support broadcasting."
         }
