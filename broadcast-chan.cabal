@@ -47,7 +47,7 @@ Flag sync
 
 Flag threaded
   Description:        Run benchmarks with threaded backend.
-  Default:            False
+  Default:            True
   Manual:             True
 
 Library
@@ -62,7 +62,7 @@ Library
                         KindSignatures
                         Safe
 
-  Build-Depends:        base >= 4 && < 5
+  Build-Depends:        base >= 4.5 && < 5
 
 Benchmark sync
   Default-Language:     Haskell2010
@@ -73,12 +73,14 @@ Benchmark sync
     GHC-Options:        -threaded
   Hs-Source-Dirs:       benchmarks
 
+  Other-Extensions:     BangPatterns
+
   if flag(benchmark) && flag(sync)
     Buildable:          True
   else
     Buildable:          False
 
-  Build-Depends:        base >= 4 && < 5
+  Build-Depends:        base
                ,        async
                ,        atomic-primops
                ,        criterion
@@ -100,7 +102,7 @@ Benchmark channels
   else
     Buildable:          False
 
-  Build-Depends:        base >= 4 && < 5
+  Build-Depends:        base
                ,        async
                ,        broadcast-chan
                ,        criterion

@@ -96,8 +96,9 @@ isClosedBChan (BChan writeVar) = mask_ $ do
 -- avoiding space leaks.
 --
 -- The return value indicates whether the write succeeded or failed (due to a
--- closed 'BroadcastChan'). See 'writeBChan_' for an exception throwing
--- variant.
+-- closed 'BroadcastChan').
+-- See @BroadcastChan.Throw.@'BroadcastChan.Throw.writeBChan' for an
+-- exception throwing variant.
 writeBChan :: BroadcastChan In a -> a -> IO Bool
 writeBChan (BChan writeVar) val = do
   new_hole <- newEmptyMVar
@@ -112,8 +113,9 @@ writeBChan (BChan writeVar) val = do
 {-# INLINE writeBChan #-}
 
 -- | Read the next value from the read end of a 'BroadcastChan'. Returns
--- 'Nothing' if the 'BroadcastChan' is closed and empty. See 'readBChan_' for
--- an exception throwing variant.
+-- 'Nothing' if the 'BroadcastChan' is closed and empty.
+-- See @BroadcastChan.Throw.@'BroadcastChan.Throw.readBChan' for an exception
+-- throwing variant.
 readBChan :: BroadcastChan Out a -> IO (Maybe a)
 readBChan (BChan readVar) = do
   modifyMVarMasked readVar $ \read_end -> do -- Note [modifyMVarMasked]
@@ -121,7 +123,7 @@ readBChan (BChan readVar) = do
     -- else newBChanListener doesn't work
     result <- readMVar read_end
     case result of
-        (ChItem val new_read_end) -> return (new_read_end, Just val)
+        ChItem val new_read_end -> return (new_read_end, Just val)
         Closed -> return (read_end, Nothing)
 {-# INLINE readBChan #-}
 

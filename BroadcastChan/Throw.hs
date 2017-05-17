@@ -1,7 +1,4 @@
 {-# LANGUAGE AutoDeriveTypeable #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE Safe #-}
 -------------------------------------------------------------------------------
 -- |
@@ -18,15 +15,9 @@
 -------------------------------------------------------------------------------
 module BroadcastChan.Throw
     ( BChanError(..)
-    , BroadcastChan
-    , In
-    , Out
-    , newBroadcastChan
-    , newBChanListener
     , readBChan
     , writeBChan
-    , closeBChan
-    , isClosedBChan
+    , module BroadcastChan
     ) where
 
 import Control.Monad (when)
