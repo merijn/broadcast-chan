@@ -37,6 +37,7 @@ module BroadcastChan
     , isClosedBChan
     ) where
 
+import Control.Applicative ((<*))
 import Control.Concurrent.MVar
 import Control.Exception (mask_)
 
