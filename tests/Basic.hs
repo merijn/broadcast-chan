@@ -3,6 +3,7 @@ import Control.Applicative ((<$>))
 import Control.Exception
 import Data.Maybe (isNothing)
 import System.Exit (exitFailure, exitSuccess)
+import System.Timeout (timeout)
 import Test.HUnit
 import BroadcastChan
 import BroadcastChan.Throw (BChanError(..))
@@ -19,6 +20,19 @@ expect err act = do
                | otherwise -> assertFailure $
                                 "Expected: " ++ show err ++ "\nGot: " ++ show e
         Right _ -> assertFailure $ "Expected exception, got success."
+
+shouldn'tBlock :: IO a -> Assertion
+shouldn'tBlock act = do
+    result <- timeout 2000000 act
+    case result of
+        Nothing -> assertFailure "Shouldn't block!"
+        Just _ -> return ()
+
+isClosedNoBlock :: Test
+isClosedNoBlock = labelTest "isClosedBChan doesn't block" $ do
+    chan <- newBroadcastChan
+    not <$> isClosedBChan chan @? "Shouldn't be closed."
+    shouldn'tBlock $ isClosedBChan chan
 
 readEmptyClosed :: Test
 readEmptyClosed = labelTest "Read Empty Closed" $ do
@@ -48,7 +62,8 @@ writeClosedThrow = labelTest "Write Closed Throw" $ do
 
 tests :: [Test]
 tests =
-  [ readEmptyClosed
+  [ isClosedNoBlock
+  , readEmptyClosed
   , readEmptyClosedThrow
   , writeClosed
   , writeClosedThrow

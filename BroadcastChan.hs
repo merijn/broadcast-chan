@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE Safe #-}
@@ -84,7 +85,15 @@ closeBChan (BChan writeVar) = mask_ $ do
 isClosedBChan :: BroadcastChan In a -> IO Bool
 isClosedBChan (BChan writeVar) = mask_ $ do
     old_hole <- takeMVar writeVar
+#if MIN_VERSION_base(4,7,0)
     val <- tryReadMVar old_hole
+#else
+    val <- tryTakeMVar old_hole
+    case val of
+        Just x -> putMVar old_hole x
+        Nothing -> return ()
+#endif
+    putMVar writeVar old_hole
     case val of
         Just Closed -> return True
         _ -> return False
