@@ -1,6 +1,4 @@
-{-# LANGUAGE AutoDeriveTypeable #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE Safe #-}
 -------------------------------------------------------------------------------
@@ -41,7 +39,6 @@ module BroadcastChan
 
 import Control.Concurrent.MVar
 import Control.Exception (mask_)
-import GHC.Generics (Generic)
 
 -- | Used with DataKinds as phantom type indicating whether a 'BroadcastChan'
 -- value is a read or write end.
@@ -58,7 +55,7 @@ type Out = 'Out
 
 -- | The abstract type representing the read or write end of a 'BroadcastChan'.
 newtype BroadcastChan (d :: Direction) a = BChan (MVar (Stream a))
-    deriving (Eq, Generic)
+    deriving (Eq)
 
 type Stream a = MVar (ChItem a)
 
@@ -95,8 +92,8 @@ isClosedBChan (BChan writeVar) = mask_ $ do
 -- while there are no live read ends can be immediately garbage collected, thus
 -- avoiding space leaks.
 --
--- The return value indicates whether the write succeeded or failed (due to a
--- closed 'BroadcastChan').
+-- The return value indicates whether the write succeeded (writing to a closed
+-- 'BroadcastChan' fails).
 -- See @BroadcastChan.Throw.@'BroadcastChan.Throw.writeBChan' for an
 -- exception throwing variant.
 writeBChan :: BroadcastChan In a -> a -> IO Bool

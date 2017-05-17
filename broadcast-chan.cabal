@@ -56,9 +56,8 @@ Library
   Exposed-Modules:      BroadcastChan
                         BroadcastChan.Throw
 
-  Other-Extensions:     AutoDeriveTypeable
+  Other-Extensions:     DeriveDataTypeable
                         DataKinds
-                        DeriveGeneric
                         KindSignatures
                         Safe
 
