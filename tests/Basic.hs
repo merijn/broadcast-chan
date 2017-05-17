@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+import Control.Applicative ((<$>))
 import Control.Exception
 import Data.Maybe (isNothing)
 import System.Exit (exitFailure, exitSuccess)
