@@ -115,6 +115,30 @@ Benchmark channels
                ,        deepseq
                ,        stm
 
+Test-Suite basic
+  Default-Language:     Haskell2010
+  Type:                 exitcode-stdio-1.0
+  Main-Is:              Basic.hs
+  GHC-Options:          -Wall -threaded -O0 -fno-warn-unused-do-bind
+  Hs-Source-Dirs:       tests
+  Other-Extensions:     RecordWildCards
+
+  Build-Depends:        base
+               ,        broadcast-chan
+               ,        HUnit == 1.6.*
+
+Test-Suite basic-unthreaded
+  Default-Language:     Haskell2010
+  Type:                 exitcode-stdio-1.0
+  Main-Is:              Basic.hs
+  GHC-Options:          -Wall -O0 -fno-warn-unused-do-bind
+  Hs-Source-Dirs:       tests
+  Other-Extensions:     RecordWildCards
+
+  Build-Depends:        base
+               ,        broadcast-chan
+               ,        HUnit == 1.6.*
+
 Source-Repository head
   Type:     git
   Location: ssh://github.com:merijn/broadcast-chan.git
