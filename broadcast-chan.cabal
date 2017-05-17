@@ -97,6 +97,12 @@ Benchmark channels
     GHC-Options:        -threaded
   Hs-Source-Dirs:       benchmarks
 
+  Other-Extensions:     BangPatterns
+                        DeriveAnyClass
+                        DeriveGeneric
+                        NumDecimals
+                        RecordWildCards
+
   if flag(benchmark)
     Buildable:          True
   else

@@ -1,5 +1,4 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE FlexibleInstances #-}
 import Criterion.Main
 
 import Control.Concurrent (forkIO, setNumCapabilities, yield)
@@ -18,7 +17,7 @@ import Data.IORef
 import Data.Function ((&))
 import GHC.Conc (getNumProcessors)
 
-instance NFData (IO ()) where
+instance NFData (IO a) where
     rnf !_ = ()
 
 benchSync :: (Int -> IO (IO (), IO ())) -> Int -> Benchmarkable
