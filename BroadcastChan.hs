@@ -42,6 +42,10 @@ import Control.Applicative ((<*))
 import Control.Concurrent.MVar
 import Control.Exception (mask_)
 
+#if !MIN_VERSION_base(4,6,0)
+import Control.Exception (evaluate, onException)
+#endif
+
 -- | Used with DataKinds as phantom type indicating whether a 'BroadcastChan'
 -- value is a read or write end.
 data Direction = In  -- ^ Indicates a write 'BroadcastChan'
