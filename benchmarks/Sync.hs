@@ -40,29 +40,24 @@ benchSTM alloc = benchSync $ \i -> do
     return (atomically signal, atomically wait)
 {-# INLINE benchSTM #-}
 
-generalSync :: (a -> Int -> Benchmarkable) -> String -> a -> [Int] -> Benchmark
-generalSync build s alloc = bgroup s . map labelledBench
-  where
-    labelledBench i = bench (show i ++ " threads") $ build alloc i
+generalSync :: (a -> Int -> Benchmarkable) -> String -> a -> Int -> Benchmark
+generalSync build s alloc i = bench s $ build alloc i
 {-# INLINE generalSync #-}
 
-syncGeneral :: String -> (Int -> IO (IO (), IO ())) -> [Int] -> Benchmark
+syncGeneral :: String -> (Int -> IO (IO (), IO ())) -> Int -> Benchmark
 syncGeneral = generalSync benchSync
 {-# INLINE syncGeneral #-}
 
-syncSTM :: String -> (Int -> IO (STM (), STM ())) -> [Int] -> Benchmark
+syncSTM :: String -> (Int -> IO (STM (), STM ())) -> Int -> Benchmark
 syncSTM = generalSync benchSTM
 {-# INLINE syncSTM #-}
 
-syncSingleWaitSTM :: String -> (IO (STM (), STM ())) -> [Int] -> Benchmark
-syncSingleWaitSTM s alloc = bgroup s . map labelledBenches
+syncSingleWaitSTM :: String -> (IO (STM (), STM ())) -> Int -> Benchmark
+syncSingleWaitSTM s alloc = bgroup s . sequence
+    [ bench "single transaction" . benchSTM singleTransaction
+    , bench "multi transaction" . benchSync multiTransaction
+    ]
   where
-    labelledBenches :: Int -> Benchmark
-    labelledBenches i = bgroup (show i ++ " threads") $ i & sequence
-        [ bench "single transaction" . benchSTM singleTransaction
-        , bench "multi transaction" . benchSync multiTransaction
-        ]
-
     singleTransaction :: Int -> IO (STM (), STM ())
     singleTransaction i = do
         (signal, wait) <- alloc
@@ -76,7 +71,7 @@ syncSingleWaitSTM s alloc = bgroup s . map labelledBenches
     {-# INLINE multiTransaction #-}
 {-# INLINE syncSingleWaitSTM #-}
 
-syncAsync :: [Int] -> Benchmark
+syncAsync :: Int -> Benchmark
 syncAsync = generalSync run "Async" ()
   where
     setup i = do
@@ -91,7 +86,7 @@ syncAsync = generalSync run "Async" ()
     {-# INLINE run #-}
 {-# INLINE syncAsync #-}
 
-syncAtomicCounter :: [Int] -> Benchmark
+syncAtomicCounter :: Int -> Benchmark
 syncAtomicCounter = syncGeneral "AtomicCounter" $ \i -> do
     cnt <- newCounter 0
     let spinLoop = do
@@ -102,13 +97,13 @@ syncAtomicCounter = syncGeneral "AtomicCounter" $ \i -> do
     return (void (incrCounter 1 cnt), spinLoop)
 {-# INLINE syncAtomicCounter #-}
 
-syncChan :: [Int] -> Benchmark
+syncChan :: Int -> Benchmark
 syncChan = syncGeneral "Chan" $ \i -> do
     chan <- newChan
     return (writeChan chan (), replicateM_ i (readChan chan))
 {-# INLINE syncChan #-}
 
-syncIORef :: [Int] -> Benchmark
+syncIORef :: Int -> Benchmark
 syncIORef = syncGeneral "IORef" $ \i -> do
     ref <- newIORef 0
     let spinLoop = do
@@ -118,31 +113,31 @@ syncIORef = syncGeneral "IORef" $ \i -> do
     return (atomicModifyIORef' ref (\n -> (n+1, ())), spinLoop)
 {-# INLINE syncIORef #-}
 
-syncMVar :: [Int] -> Benchmark
+syncMVar :: Int -> Benchmark
 syncMVar = syncGeneral "MVar" $ \i -> do
     mvar <- newEmptyMVar
     return (putMVar mvar (), replicateM_ i (takeMVar mvar))
 {-# INLINE syncMVar #-}
 
-syncQSem :: [Int] -> Benchmark
+syncQSem :: Int -> Benchmark
 syncQSem = syncGeneral "QSem" $ \i -> do
     qsem <- newQSem 0
     return (signalQSem qsem, replicateM_ i (waitQSem qsem))
 {-# INLINE syncQSem #-}
 
-syncQSemN :: [Int] -> Benchmark
+syncQSemN :: Int -> Benchmark
 syncQSemN = syncGeneral "QSemN" $ \i -> do
     qsemn <- newQSemN 0
     return (signalQSemN qsemn 1, waitQSemN qsemn i)
 {-# INLINE syncQSemN #-}
 
-syncTChan :: [Int] -> Benchmark
+syncTChan :: Int -> Benchmark
 syncTChan = syncSingleWaitSTM "TChan" $ do
     tchan <- newTChanIO
     return (writeTChan tchan (), readTChan tchan)
 {-# INLINE syncTChan #-}
 
-syncTMVar :: [Int] -> Benchmark
+syncTMVar :: Int -> Benchmark
 syncTMVar = syncGeneral "TMVar" $ \i -> do
     tmvar <- newEmptyTMVarIO
     let signal = atomically $ putTMVar tmvar ()
@@ -150,38 +145,41 @@ syncTMVar = syncGeneral "TMVar" $ \i -> do
     return (signal, wait)
 {-# INLINE syncTMVar #-}
 
-syncTQueue :: [Int] -> Benchmark
+syncTQueue :: Int -> Benchmark
 syncTQueue = syncSingleWaitSTM "TQueue" $ do
     tqueue <- newTQueueIO
     return (writeTQueue tqueue (), readTQueue tqueue)
 {-# INLINE syncTQueue #-}
 
-syncTSem :: [Int] -> Benchmark
+syncTSem :: Int -> Benchmark
 syncTSem = syncSingleWaitSTM "TSem" $ do
     tsem <- atomically $ newTSem 0
     return (signalTSem tsem, waitTSem tsem)
 {-# INLINE syncTSem #-}
 
-syncTVar :: [Int] -> Benchmark
+syncTVar :: Int -> Benchmark
 syncTVar = syncSTM "TVar" $ \i -> do
     tvar <- newTVarIO 0
     return (modifyTVar' tvar (+1), check . (==i) =<< readTVar tvar)
 {-# INLINE syncTVar #-}
 
+benchThreads :: Int -> Benchmark
+benchThreads i = bgroup (show i ++ " threads") $ i & sequence
+    [ syncAsync
+    , syncAtomicCounter
+    , syncChan
+    , syncIORef
+    , syncMVar
+    , syncQSem
+    , syncQSemN
+    , syncTChan
+    , syncTMVar
+    , syncTVar
+    , syncTQueue
+    , syncTSem
+    ]
+
 main :: IO ()
 main = do
     getNumProcessors >>= setNumCapabilities
-    defaultMain $ [1, 2, 5, 10, 100, 1000, 10000] & sequence
-      [ syncAsync
-      , syncAtomicCounter
-      , syncChan
-      , syncIORef
-      , syncMVar
-      , syncQSem
-      , syncQSemN
-      , syncTChan
-      , syncTMVar
-      , syncTVar
-      , syncTQueue
-      , syncTSem
-      ]
+    defaultMain $ map benchThreads [1, 2, 5, 10, 100, 1000, 10000]
