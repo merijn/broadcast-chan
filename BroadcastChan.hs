@@ -48,11 +48,11 @@ data Direction = In  -- ^ Indicates a write 'BroadcastChan'
                | Out -- ^ Indicates a read 'BroadcastChan'
 
 -- | Alias for the 'In' type from the 'Direction' kind, allows users to write
--- the @'BroadcastChan' 'In' a@ type without enabling DataKinds.
+-- the @'BroadcastChan' 'In' a@ type without enabling @DataKinds@.
 type In = 'In
 
 -- | Alias for the 'Out' type from the 'Direction' kind, allows users to write
--- the @'BroadcastChan' 'Out' a@ type without enabling DataKinds.
+-- the @'BroadcastChan' 'Out' a@ type without enabling @DataKinds@.
 type Out = 'Out
 
 -- | The abstract type representing the read or write end of a 'BroadcastChan'.
@@ -70,40 +70,46 @@ newBroadcastChan = do
    writeVar <- newMVar hole
    return (BChan writeVar)
 
--- | Close a 'BroadcastChan', disallowing further writes. Return value
--- indicates whether the 'BroadcastChan' was already closed.
+-- | Close a 'BroadcastChan', disallowing further writes. Returns 'True' if the
+-- 'BroadcastChan' was closed. Returns 'False' if the 'BroadcastChan' was
+-- __already__ closed.
 closeBChan :: BroadcastChan In a -> IO Bool
 closeBChan (BChan writeVar) = mask_ $ do
     old_hole <- takeMVar writeVar
     -- old_hole is always empty unless the channel was already closed
     tryPutMVar old_hole Closed <* putMVar writeVar old_hole
 
--- | Check whether a 'BroadcastChan' is closed. Beware of TOC-TOU races,
--- it is possible for a 'BroadcastChan' to be closed by another thread. If
--- multiple threads use the same 'BroadcastChan' a 'closeBChan' from another
--- thread might cause writes to fail even after 'isClosedBChan' returns 'True'.
+-- | Check whether a 'BroadcastChan' is closed. 'True' means it's closed,
+-- 'False' means it's writable. However:
+--
+-- __Beware of TOC-TOU races__: It is possible for a 'BroadcastChan' to be
+-- closed by another thread. If multiple threads use the same 'BroadcastChan' a
+-- 'closeBChan' from another thread might result in the channel being closed
+-- right after 'isClosedBChan' returns.
 isClosedBChan :: BroadcastChan In a -> IO Bool
-isClosedBChan (BChan writeVar) = mask_ $ do
-    old_hole <- takeMVar writeVar
 #if MIN_VERSION_base(4,7,0)
+isClosedBChan (BChan writeVar) = do
+    old_hole <- readMVar writeVar
     val <- tryReadMVar old_hole
 #else
+isClosedBChan (BChan writeVar) = mask_ $ do
+    old_hole <- takeMVar writeVar
     val <- tryTakeMVar old_hole
     case val of
         Just x -> putMVar old_hole x
         Nothing -> return ()
-#endif
     putMVar writeVar old_hole
+#endif
     case val of
         Just Closed -> return True
         _ -> return False
 
 -- | Write a value to write end of a 'BroadcastChan'. Any messages written
--- while there are no live read ends can be immediately garbage collected, thus
--- avoiding space leaks.
+-- while there are no live read ends are dropped on the floor and can be
+-- immediately garbage collected, thus avoiding space leaks.
 --
--- The return value indicates whether the write succeeded (writing to a closed
--- 'BroadcastChan' fails).
+-- The return value indicates whether the write succeeded, i.e., 'True' if the
+-- message was written, 'False' is the channel is closed.
 -- See @BroadcastChan.Throw.@'BroadcastChan.Throw.writeBChan' for an
 -- exception throwing variant.
 writeBChan :: BroadcastChan In a -> a -> IO Bool
@@ -143,9 +149,20 @@ readBChan (BChan readVar) = do
 -- artificial yield between its takeMVar and putMVar operations.
 
 -- | Create a new read end for a 'BroadcastChan'. Will receive all messages
--- written to the channel's write end after the read end's creation.
+-- written to the channel __after__ this read end is created.
 newBChanListener :: BroadcastChan In a -> IO (BroadcastChan Out a)
 newBChanListener (BChan writeVar) = do
    hole       <- readMVar writeVar
    newReadVar <- newMVar hole
    return (BChan newReadVar)
+
+#if !MIN_VERSION_base(4,6,0)
+{-# INLINE modifyMVarMasked #-}
+modifyMVarMasked :: MVar a -> (a -> IO (a,b)) -> IO b
+modifyMVarMasked m io =
+  mask_ $ do
+    a      <- takeMVar m
+    (a',b) <- (io a >>= evaluate) `onException` putMVar m a
+    putMVar m a'
+    return b
+#endif

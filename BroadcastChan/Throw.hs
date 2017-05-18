@@ -9,9 +9,11 @@
 -- Stability   :  experimental
 -- Portability :  haha
 --
--- Re-export of "Broadcast" that replaces 'writeBChan' and 'readBChan' with
--- versions that throw an exception, rather than returning results that the
--- user has to inspect to check for success.
+-- Re-export of "Broadcast" that replaces
+-- @BroadcastChan.@'BroadcastChan.writeBChan' and
+-- @BroadcastChan.@'BroadcastChan.readBChan' with versions that throw an
+-- exception, rather than returning results that the user has to inspect to
+-- check for success.
 -------------------------------------------------------------------------------
 module BroadcastChan.Throw
     ( BChanError(..)
