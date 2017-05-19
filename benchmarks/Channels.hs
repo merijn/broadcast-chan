@@ -249,7 +249,7 @@ main = do
     ]
   where
     threads = [1,2,5,10,100,1000,1e4]
-    msgCounts = [100,1000,1e4,1e5,1e6]
+    msgCounts = [1e4,1e5,1e6]
 
     runConcurrentBench = runConcurrent "Read-Write" threads threads msgCounts
     runConcurrentWrites = runConcurrent "Write" threads [0] msgCounts
