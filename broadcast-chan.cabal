@@ -65,6 +65,20 @@ Library
 
   Build-Depends:        base >= 4.5 && < 5
 
+Executable gen-report
+  Default-Language:     Haskell2010
+  Main-Is:              Report.hs
+  GHC-Options:          -Wall -O2 -Wno-orphans
+  Hs-Source-Dirs:       benchmarks
+
+  if flag(benchmark)
+    Buildable:          True
+  else
+    Buildable:          False
+
+  Build-Depends:        base
+               ,        criterion
+
 Benchmark sync
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
