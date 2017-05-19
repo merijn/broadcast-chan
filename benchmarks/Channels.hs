@@ -241,7 +241,7 @@ main = do
         , runConcurrentWrites False chanTypes
         , runConcurrentBench False chanTypes
         ]
-    , bgroup "Concurrent Broadcast"
+    , bgroup "Broadcast"
         [ runConcurrentWrites True chanTypes
         , runConcurrentReads True chanTypes
         , runConcurrentBench True chanTypes
