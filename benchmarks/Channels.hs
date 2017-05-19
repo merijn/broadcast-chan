@@ -238,7 +238,7 @@ main = do
     , bgroup "Read" $ map benchReads chanTypes
     , bgroup "Concurrent"
         [ runConcurrentWrites False writeChanTypes
-        , runConcurrentWrites False chanTypes
+        , runConcurrentReads False chanTypes
         , runConcurrentBench False chanTypes
         ]
     , bgroup "Broadcast"
