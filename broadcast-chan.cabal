@@ -135,6 +135,9 @@ Benchmark channels
                ,        deepseq >= 1.1 && < 1.5
                ,        stm >= 2.4 && < 2.5
 
+  if impl(ghc < 7.10)
+    Build-Depends:      bifunctors >= 5.4 && < 5.5
+
 Test-Suite basic
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
