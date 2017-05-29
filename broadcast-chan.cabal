@@ -124,7 +124,6 @@ Benchmark channels
   Hs-Source-Dirs:       benchmarks
 
   Other-Extensions:     BangPatterns
-                        DeriveAnyClass
                         DeriveGeneric
                         NumDecimals
                         RecordWildCards

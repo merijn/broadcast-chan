@@ -1,5 +1,4 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE NumDecimals #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -49,7 +48,9 @@ data ChanOps
     { putChan :: !(IO ())
     , takeChan :: !(IO ())
     , dupTake :: !(IO (IO ()))
-    } deriving (Generic, NFData)
+    } deriving (Generic)
+
+instance NFData ChanOps
 
 data ChanType
     = Chan
