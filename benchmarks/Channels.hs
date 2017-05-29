@@ -1,6 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE NumDecimals #-}
 {-# LANGUAGE RecordWildCards #-}
 import Criterion.Main
 
@@ -249,8 +248,8 @@ main = do
         ]
     ]
   where
-    threads = [1,2,5,10,100,1000,1e4]
-    msgCounts = [1e4,1e5,1e6]
+    threads = [1,2,5,10,100,1000,10^4]
+    msgCounts = [10^4,10^5,10^6]
 
     runConcurrentBench = runConcurrent "Read-Write" threads threads msgCounts
     runConcurrentWrites = runConcurrent "Write" threads [0] msgCounts

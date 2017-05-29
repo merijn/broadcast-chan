@@ -95,7 +95,7 @@ Benchmark sync
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
   Main-Is:              Sync.hs
-  GHC-Options:          -Wall -O2 -Wno-orphans
+  GHC-Options:          -Wall -O2 -fno-warn-orphans
   if flag(threaded)
     GHC-Options:        -threaded
   Hs-Source-Dirs:       benchmarks
@@ -118,14 +118,14 @@ Benchmark channels
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
   Main-Is:              Channels.hs
-  GHC-Options:          -Wall -O2 -Wno-orphans -fno-warn-unused-do-bind
+  GHC-Options:          -Wall -O2 -fno-warn-orphans -fno-warn-unused-do-bind
+                        -fno-warn-type-defaults
   if flag(threaded)
     GHC-Options:        -threaded
   Hs-Source-Dirs:       benchmarks
 
   Other-Extensions:     BangPatterns
                         DeriveGeneric
-                        NumDecimals
                         RecordWildCards
 
   Build-Depends:        base
