@@ -3,6 +3,7 @@
 {-# LANGUAGE RecordWildCards #-}
 import Criterion.Main
 
+import Control.Applicative ((<$>))
 import Control.Concurrent (setNumCapabilities)
 import Control.Concurrent.Async
 import BroadcastChan

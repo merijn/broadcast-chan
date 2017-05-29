@@ -135,6 +135,9 @@ Benchmark channels
                ,        deepseq >= 1.1 && < 1.5
                ,        stm >= 2.4 && < 2.5
 
+  if impl(ghc < 7.4)
+    Build-Depends:      ghc-prim
+
   if impl(ghc < 7.10)
     Build-Depends:      bifunctors >= 5.4 && < 5.5
 
