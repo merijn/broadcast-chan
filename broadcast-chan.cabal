@@ -6,7 +6,7 @@ Bug-Reports:        https://github.com/merijn/broadcast-chan/issues
 
 Author:             Merijn Verstraaten
 Maintainer:         Merijn Verstraaten <merijn@inconsistent.nl>
-Copyright:          Copyright © 2014 Merijn Verstraaten
+Copyright:          Copyright © 2014-2017 Merijn Verstraaten
 
 License:            BSD3
 License-File:       LICENSE
@@ -66,12 +66,6 @@ Description:
     .
     * @BroadcastChan@ performs better under contention.
 
-Flag benchmark
-  Description:        Benchmarks depend on an unreleased version of
-                      Criterion, making them unbuildable without sanboxes.
-  Default:            False
-  Manual:             True
-
 Flag sync
   Description:        Benchmarks synchronisation primitives used in main
                       benchmark.
@@ -108,18 +102,17 @@ Benchmark sync
 
   Other-Extensions:     BangPatterns
 
-  if flag(benchmark) && flag(sync)
+  if flag(sync)
     Buildable:          True
   else
     Buildable:          False
 
   Build-Depends:        base
-               ,        async
-               ,        atomic-primops
-               ,        criterion
-               ,        containers
-               ,        deepseq
-               ,        stm
+               ,        async >= 2.0 && < 2.2
+               ,        atomic-primops == 0.8.*
+               ,        criterion == 1.2.*
+               ,        deepseq >= 1.1 && < 1.5
+               ,        stm >= 2.4 && < 2.5
 
 Benchmark channels
   Default-Language:     Haskell2010
@@ -136,17 +129,12 @@ Benchmark channels
                         NumDecimals
                         RecordWildCards
 
-  if flag(benchmark)
-    Buildable:          True
-  else
-    Buildable:          False
-
   Build-Depends:        base
-               ,        async
                ,        broadcast-chan
-               ,        criterion
-               ,        deepseq
-               ,        stm
+               ,        async >= 2.0 && < 2.2
+               ,        criterion == 1.2.*
+               ,        deepseq >= 1.1 && < 1.5
+               ,        stm >= 2.4 && < 2.5
 
 Test-Suite basic
   Default-Language:     Haskell2010

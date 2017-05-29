@@ -2,7 +2,7 @@
 import Criterion.Main
 
 import Control.Concurrent (forkIO, setNumCapabilities, yield)
-import Control.Concurrent.Async hiding (wait)
+import Control.Concurrent.Async (async)
 import qualified Control.Concurrent.Async as Async
 import Control.Concurrent.Chan
 import Control.Concurrent.MVar
