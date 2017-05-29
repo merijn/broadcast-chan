@@ -101,6 +101,7 @@ Benchmark sync
   Hs-Source-Dirs:       benchmarks
 
   Other-Extensions:     BangPatterns
+                        CPP
 
   if flag(sync)
     Buildable:          True
@@ -125,6 +126,7 @@ Benchmark channels
   Hs-Source-Dirs:       benchmarks
 
   Other-Extensions:     BangPatterns
+                        CPP
                         DeriveGeneric
                         RecordWildCards
 

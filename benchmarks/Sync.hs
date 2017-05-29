@@ -1,7 +1,13 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP #-}
 import Criterion.Main
 
+#if __GLASGOW_HASKELL__ > 704
 import Control.Concurrent (forkIO, setNumCapabilities, yield)
+#else
+import Control.Concurrent (forkIO, yield)
+import GHC.Conc (setNumCapabilities)
+#endif
 import Control.Concurrent.Async (async)
 import qualified Control.Concurrent.Async as Async
 import Control.Concurrent.Chan
