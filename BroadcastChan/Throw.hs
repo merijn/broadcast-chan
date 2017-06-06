@@ -2,7 +2,7 @@
 {-# LANGUAGE Safe #-}
 -------------------------------------------------------------------------------
 -- |
--- Module      :  BroadcastChan
+-- Module      :  BroadcastChan.Throw
 -- Copyright   :  (C) 2014-2017 Merijn Verstraaten
 -- License     :  BSD-style (see the file LICENSE)
 -- Maintainer  :  Merijn Verstraaten <merijn@inconsistent.nl>
