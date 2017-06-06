@@ -81,15 +81,23 @@ Library
   Default-Language:     Haskell2010
   GHC-Options:          -Wall -O2 -fno-warn-unused-do-bind
   Exposed-Modules:      BroadcastChan
+                        BroadcastChan.Prelude
                         BroadcastChan.Throw
+                        BroadcastChan.Utils
+  Other-Modules:        BroadcastChan.Internal
 
   Other-Extensions:     CPP
-                        DeriveDataTypeable
                         DataKinds
+                        DeriveDataTypeable
                         KindSignatures
+                        RankNTypes
                         Safe
+                        ScopedTypeVariables
+                        Trustworthy
 
   Build-Depends:        base >= 4.5 && < 5
+  if impl(ghc < 8.0)
+    Build-Depends:      transformers >= 0.2 && < 0.6
 
 Benchmark sync
   Default-Language:     Haskell2010
@@ -143,17 +151,28 @@ Benchmark channels
   if impl(ghc < 7.10)
     Build-Depends:      bifunctors >= 5.4 && < 5.5
 
+Benchmark utilities
+  Default-Language:     Haskell2010
+  Type:                 exitcode-stdio-1.0
+  Main-Is:              Utils.hs
+  GHC-Options:          -Wall -O2 -Wno-orphans -fno-warn-unused-do-bind
+                        -rtsopts
+  if flag(threaded)
+    GHC-Options:        -threaded
+  Hs-Source-Dirs:       benchmarks
+
+  Build-Depends:        base
+               ,        broadcast-chan
+
 Test-Suite basic
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
   Main-Is:              Basic.hs
   GHC-Options:          -Wall -threaded -O0 -fno-warn-unused-do-bind
   Hs-Source-Dirs:       tests
-  Other-Extensions:     RecordWildCards
-
   Build-Depends:        base
                ,        broadcast-chan
-               ,        HUnit == 1.6.*
+               ,        broadcast-chan-tests == 0.1.0
 
 Test-Suite basic-unthreaded
   Default-Language:     Haskell2010
@@ -161,11 +180,20 @@ Test-Suite basic-unthreaded
   Main-Is:              Basic.hs
   GHC-Options:          -Wall -O0 -fno-warn-unused-do-bind
   Hs-Source-Dirs:       tests
-  Other-Extensions:     RecordWildCards
-
   Build-Depends:        base
                ,        broadcast-chan
-               ,        HUnit == 1.6.*
+               ,        broadcast-chan-tests == 0.1.0
+
+Test-Suite parallel-io
+  Default-Language:     Haskell2010
+  Type:                 exitcode-stdio-1.0
+  Main-Is:              IOTest.hs
+  GHC-Options:          -Wall -O2 -fno-warn-unused-do-bind
+  Hs-Source-Dirs:       tests
+  Build-Depends:        base
+               ,        broadcast-chan
+               ,        broadcast-chan-tests == 0.1.0
+               ,        containers == 0.5.*
 
 Source-Repository head
   Type:     git

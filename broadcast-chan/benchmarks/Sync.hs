@@ -4,9 +4,10 @@ import Criterion.Main
 
 #if __GLASGOW_HASKELL__ > 704
 import Control.Concurrent (forkIO, setNumCapabilities, yield)
+import GHC.Conc (getNumProcessors)
 #else
 import Control.Concurrent (forkIO, yield)
-import GHC.Conc (setNumCapabilities)
+import GHC.Conc (getNumProcessors, setNumCapabilities)
 #endif
 import Control.Concurrent.Async (async)
 import qualified Control.Concurrent.Async as Async
@@ -15,13 +16,12 @@ import Control.Concurrent.MVar
 import Control.Concurrent.QSem
 import Control.Concurrent.QSemN
 import Control.Concurrent.STM
-import Control.Concurrent.STM.TSem
+import Control.Concurrent.STM.TSem (newTSem, signalTSem, waitTSem)
 import Control.DeepSeq (NFData(..))
 import Control.Monad (replicateM, replicateM_, void, when)
 import Data.Atomics.Counter
 import Data.IORef
 import Data.Function ((&))
-import GHC.Conc (getNumProcessors)
 
 instance NFData (IO a) where
     rnf !_ = ()

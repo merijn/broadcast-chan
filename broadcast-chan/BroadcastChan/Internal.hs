@@ -1,79 +1,14 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE Safe #-}
--------------------------------------------------------------------------------
--- |
--- Module      :  BroadcastChan
--- Copyright   :  (C) 2014-2017 Merijn Verstraaten
--- License     :  BSD-style (see the file LICENSE)
--- Maintainer  :  Merijn Verstraaten <merijn@inconsistent.nl>
--- Stability   :  experimental
--- Portability :  haha
---
--- A closable, fair, single-wakeup channel that avoids the 0 reader space leak
--- that @"Control.Concurrent.Chan"@ from base suffers from.
---
--- The @Chan@ type from @"Control.Concurrent.Chan"@ consists of both a read
--- and write end combined into a single value. This means there is always at
--- least 1 read end for a @Chan@, which keeps any values written to it alive.
--- This is a problem for applications/libraries that want to have a channel
--- that can have zero listeners.
---
--- Suppose we have an library that produces events and we want to let users
--- register to receive events. If we use a channel and write all events to it,
--- we would like to drop and garbage collect any events that take place when
--- there are 0 listeners. The always present read end of @Chan@ from base
--- makes this impossible. We end up with a @Chan@ that forever accumulates
--- more and more events that will never get removed, resulting in a memory
--- leak.
---
--- @"BroadcastChan"@ splits channels into separate read and write ends. Any
--- message written to a a channel with no existing read end is immediately
--- dropped so it can be garbage collected. Once a read end is created, all
--- messages written to the channel will be accessible to that read end.
---
--- Once all read ends for a channel have disappeared and been garbage
--- collected, the channel will return to dropping messages as soon as they are
--- written.
---
--- __Why should I use "BroadcastChan" over "Control.Concurrent.Chan"?__
---
--- * @"BroadcastChan"@ is closable,
---
--- * @"BroadcastChan"@ has no 0 reader space leak,
---
--- * @"BroadcastChan"@ has comparable or better performance.
---
--- __Why should I use "BroadcastChan" over various (closable) STM channels?__
---
--- * @"BroadcastChan"@ is single-wakeup,
---
--- * @"BroadcastChan"@ is fair,
---
--- * @"BroadcastChan"@ performs better under contention.
--------------------------------------------------------------------------------
-module BroadcastChan (
-    -- * Datatypes
-      BroadcastChan
-#if __GLASGOW_HASKELL__ > 704
-    , Direction(..)
-#endif
-    , In
-    , Out
-    -- * Construction
-    , newBroadcastChan
-    , newBChanListener
-    -- * Basic Operations
-    , readBChan
-    , writeBChan
-    , closeBChan
-    , isClosedBChan
-    ) where
+{-# LANGUAGE Trustworthy #-}
+module BroadcastChan.Internal where
 
 import Control.Applicative ((<*))
 import Control.Concurrent.MVar
 import Control.Exception (mask_)
+import Control.Monad.IO.Class (MonadIO(..))
+import System.IO.Unsafe (unsafeInterleaveIO)
 
 #if !MIN_VERSION_base(4,6,0)
 import Control.Exception (evaluate, onException)
@@ -201,6 +136,67 @@ newBChanListener (BChan writeVar) = do
    hole       <- readMVar writeVar
    newReadVar <- newMVar hole
    return (BChan newReadVar)
+--
+-- | Strict fold of the 'BroadcastChan''s elements. Can be used with
+-- "Control.Foldl" from Tekmo's foldl package:
+--
+-- > Control.Foldl.purely foldBChan :: MonadIO m => Fold a b -> BroadcastChan In a -> m (m b)
+foldBChan
+    :: MonadIO m
+    => (x -> a -> x)
+    -> x
+    -> (x -> b)
+    -> BroadcastChan In a
+    -> m (m b)
+foldBChan step begin done chan = do
+    listen <- liftIO $ newBChanListener chan
+    return $ go listen begin
+  where
+    go listen x = do
+        x' <- liftIO $ readBChan listen
+        case x' of
+            Just x'' -> go listen $! step x x''
+            Nothing -> return $! done x
+{-# INLINABLE foldBChan #-}
+
+-- | Strict, monadic fold of the 'BroadcastChan''s elements. Can be used with
+-- "Control.Foldl" from Tekmo's foldl package:
+--
+-- > Control.Foldl.impurely foldBChanM :: MonadIO m => FoldM m a b -> BroadcastChan In a -> m (m b)
+foldBChanM
+    :: MonadIO m
+    => (x -> a -> m x)
+    -> m x
+    -> (x -> m b)
+    -> BroadcastChan In a
+    -> m (m b)
+foldBChanM step begin done chan = do
+    listen <- liftIO $ newBChanListener chan
+    x0 <- begin
+    return $ go listen x0
+  where
+    go listen x = do
+        x' <- liftIO $ readBChan listen
+        case x' of
+            Just x'' -> step x x'' >>= go listen
+            Nothing -> done x
+{-# INLINABLE foldBChanM #-}
+
+-- | Return a lazy list representing everything written to the supplied
+-- 'BroadcastChan' after this IO action returns. Similar to
+-- 'Control.Concurrent.Chan.getChanContents'.
+--
+-- Uses 'unsafeInterleaveIO' to defer the IO operations.
+getBChanContents :: BroadcastChan In a -> IO [a]
+getBChanContents chan = newBChanListener chan >>= go
+  where
+    go ch = unsafeInterleaveIO $ do
+        result <- readBChan ch
+        case result of
+            Nothing -> return []
+            Just x -> do
+                xs <- go ch
+                return (x:xs)
 
 #if !MIN_VERSION_base(4,6,0)
 {-# INLINE modifyMVarMasked #-}

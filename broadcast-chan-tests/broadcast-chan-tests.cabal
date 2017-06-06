@@ -1,0 +1,60 @@
+Name:               broadcast-chan-tests
+Version:            0.1.0
+
+Homepage:           https://github.com/merijn/broadcast-chan
+Bug-Reports:        https://github.com/merijn/broadcast-chan/issues
+
+Author:             Merijn Verstraaten
+Maintainer:         Merijn Verstraaten <merijn@inconsistent.nl>
+Copyright:          Copyright © 2014-2017 Merijn Verstraaten
+
+License:            BSD3
+License-File:       LICENSE
+
+Category:           System
+Cabal-Version:      >= 1.10
+Build-Type:         Simple
+Tested-With:        GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.3,
+                    GHC == 8.0.2, GHC == 8.2.1, GHC == 8.3.*
+
+Synopsis:           
+
+Description:
+
+Library
+  Default-Language:     Haskell2010
+  GHC-Options:          -Wall -O2 -fno-warn-unused-do-bind
+  Exposed-Modules:      BroadcastChan.Test
+  Other-Modules:        BroadcastChan.Helpers
+
+  Other-Extensions:     DataKinds
+                        GADTs
+                        KindSignatures
+                        NumDecimals
+                        ScopedTypeVariables
+                        TypeFamilies
+                        TypeOperators
+
+  Build-Depends:        base >= 4.5 && < 5
+               ,        async == 2.1.*
+               ,        clock == 0.7.*
+               ,        containers == 0.5.*
+               ,        optparse-applicative == 0.14.*
+               ,        stm == 2.4.*
+               ,        tagged == 0.8.*
+               ,        tasty == 0.11.*
+               ,        tasty-hunit == 0.9.*
+               ,        tasty-golden == 2.3.*
+               ,        temporary == 1.2.*
+               ,        text == 1.2.*
+
+  if impl(ghc < 8.0)
+    Build-Depends:      transformers >= 0.2 && < 0.6
+
+Source-Repository head
+  Type:     git
+  Location: ssh://github.com:merijn/broadcast-chan.git
+
+Source-Repository head
+  Type:     mercurial
+  Location: https://bitbucket.org/merijnv/broadcast-chan
