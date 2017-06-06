@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 import Control.Applicative ((<$>))
 import Control.Exception
+import Control.Monad (forM_)
 import Data.Maybe (isNothing)
 import System.Exit (exitFailure, exitSuccess)
 import System.Timeout (timeout)
@@ -20,6 +21,17 @@ expect err act = do
                | otherwise -> assertFailure $
                                 "Expected: " ++ show err ++ "\nGot: " ++ show e
         Right _ -> assertFailure $ "Expected exception, got success."
+
+lazyIO :: Test
+lazyIO = labelTest "getBChanContents" $ do
+    chan <- newBroadcastChan
+    result <- getBChanContents chan
+    forM_ testData $ writeBChan chan
+    closeBChan chan >>= assertBool "Channel should close"
+    assertEqual "Data should be equal" testData result
+  where
+    testData :: [Int]
+    testData = [1..10]
 
 shouldn'tBlock :: IO a -> Assertion
 shouldn'tBlock act = do
@@ -62,7 +74,8 @@ writeClosedThrow = labelTest "Write Closed Throw" $ do
 
 tests :: [Test]
 tests =
-  [ isClosedNoBlock
+  [ lazyIO
+  , isClosedNoBlock
   , readEmptyClosed
   , readEmptyClosedThrow
   , writeClosed

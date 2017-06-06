@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Trustworthy #-}
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  BroadcastChan
@@ -69,11 +69,17 @@ module BroadcastChan (
     , writeBChan
     , closeBChan
     , isClosedBChan
+    -- * Utility functions
+    , foldBChan
+    , foldBChanM
+    , getBChanContents
     ) where
 
 import Control.Applicative ((<*))
 import Control.Concurrent.MVar
 import Control.Exception (mask_)
+import Control.Monad.IO.Class (MonadIO(..))
+import System.IO.Unsafe (unsafeInterleaveIO)
 
 #if !MIN_VERSION_base(4,6,0)
 import Control.Exception (evaluate, onException)
@@ -201,6 +207,66 @@ newBChanListener (BChan writeVar) = do
    hole       <- readMVar writeVar
    newReadVar <- newMVar hole
    return (BChan newReadVar)
+--
+-- | Strict fold of the 'BroadcastChan''s elements. Can be used with
+-- "Control.Foldl" from Tekmo's foldl package:
+--
+-- > Control.Foldl.purely foldBChan :: MonadIO m => Fold a b -> BroadcastChan In a -> m (m b)
+foldBChan
+    :: MonadIO m
+    => (x -> a -> x)
+    -> x
+    -> (x -> b)
+    -> BroadcastChan In a
+    -> m (m b)
+foldBChan step begin done chan = do
+    listen <- liftIO $ newBChanListener chan
+    return $ go listen begin
+  where
+    go listen x = do
+        x' <- liftIO $ readBChan listen
+        case x' of
+            Just x'' -> go listen $! step x x''
+            Nothing -> return $! done x
+
+-- | Strict, monadic fold of the 'BroadcastChan''s elements. Can be used with
+-- "Control.Foldl" from Tekmo's foldl package:
+--
+-- > Control.Foldl.impurely foldBChanM :: MonadIO m => FoldM m a b -> BroadcastChan In a -> m (m b)
+foldBChanM
+    :: MonadIO m
+    => (x -> a -> m x)
+    -> m x
+    -> (x -> m b)
+    -> BroadcastChan In a
+    -> m (m b)
+foldBChanM step begin done chan = do
+    listen <- liftIO $ newBChanListener chan
+    x0 <- begin
+    return $ go listen x0
+  where
+    go listen x = do
+        x' <- liftIO $ readBChan listen
+        case x' of
+            Just x'' -> step x x'' >>= go listen
+            Nothing -> done x
+{-# INLINABLE foldBChanM #-}
+
+-- | Return a lazy list representing everything written to the supplied
+-- 'BroadcastChan' after this IO action returns. Similar to
+-- 'Control.Concurrent.Chan.getChanContents'.
+--
+-- Uses 'unsafeInterleaveIO' to defer the IO operations.
+getBChanContents :: BroadcastChan In a -> IO [a]
+getBChanContents chan = newBChanListener chan >>= go
+  where
+    go ch = unsafeInterleaveIO $ do
+        result <- readBChan ch
+        case result of
+            Nothing -> return []
+            Just x -> do
+                xs <- go ch
+                return (x:xs)
 
 #if !MIN_VERSION_base(4,6,0)
 {-# INLINE modifyMVarMasked #-}
