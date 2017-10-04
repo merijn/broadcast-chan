@@ -4,7 +4,6 @@ module BroadcastChan.Test
     ( expect
     , doNothing
     , doPrint
-    , fromTimeSpec
     , genStreamTests
     , runTests
     , withTime
@@ -32,7 +31,8 @@ import qualified Data.Text.IO as T
 import Data.Tagged (Tagged, untag)
 import Data.Typeable (Typeable)
 import Options.Applicative (switch, long, help)
-import System.Clock (Clock(Monotonic), TimeSpec(..), diffTimeSpec, getTime)
+import System.Clock
+    (Clock(Monotonic), TimeSpec, diffTimeSpec, getTime, toNanoSecs)
 import System.Environment (setEnv)
 import System.IO (Handle, SeekMode(AbsoluteSeek), hPrint, hSeek)
 import System.IO.Temp (withSystemTempFile)
@@ -63,7 +63,7 @@ doPrint hnd x = do
     return x
 
 fromTimeSpec :: Fractional n => TimeSpec -> n
-fromTimeSpec = fromIntegral . nsec
+fromTimeSpec = fromIntegral . toNanoSecs
 
 speedupTest
     :: forall r . (Eq r, Show r)
