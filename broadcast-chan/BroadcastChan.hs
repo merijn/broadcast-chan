@@ -81,9 +81,12 @@ module BroadcastChan (
     , parFoldMapM
     ) where
 
-import Control.Monad (foldM)
+import Control.Monad (liftM)
 import Control.Monad.IO.Class (MonadIO(..))
-import Data.Foldable (forM_)
+#if !MIN_VERSION_base(4,8,0)
+import Data.Foldable (Foldable(..))
+#endif
+import Data.Foldable (foldlM, forM_)
 
 import BroadcastChan.Internal
 import BroadcastChan.Utils
@@ -127,9 +130,9 @@ parFoldMapM bracketOnError hndl threads work f z input =
     runParallel bracketOnError body (Right f) hndl threads work
   where
     body :: (a -> m ()) -> (a -> m b) -> m r
-    body send sendRecv = snd <$> foldM wrappedFoldFun (0, z) input
+    body send sendRecv = snd `liftM` foldlM wrappedFoldFun (0, z) input
       where
         wrappedFoldFun :: (Int, r) -> a -> m (Int, r)
         wrappedFoldFun (i, x) a
-            | i == threads = fmap (i,) $ sendRecv a >>= f x
-            | otherwise = (i+1, x) <$ send a
+            | i == threads = liftM (i,) $ sendRecv a >>= f x
+            | otherwise = const (i+1, x) `liftM` send a

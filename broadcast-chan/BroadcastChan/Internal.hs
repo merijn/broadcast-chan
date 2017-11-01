@@ -4,7 +4,9 @@
 {-# LANGUAGE Trustworthy #-}
 module BroadcastChan.Internal where
 
+#if !MIN_VERSION_base(4,8,0)
 import Control.Applicative ((<*))
+#endif
 import Control.Concurrent.MVar
 import Control.Exception (mask_)
 import Control.Monad.IO.Class (MonadIO(..))

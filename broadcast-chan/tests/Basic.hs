@@ -1,4 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if !MIN_VERSION_base(4,8,0)
 import Control.Applicative ((<$>))
+#endif
 import Control.Monad (forM_)
 import Data.Maybe (isNothing)
 import System.Timeout (timeout)

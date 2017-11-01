@@ -1,7 +1,13 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP #-}
+#if !MIN_VERSION_base(4,8,0)
+import Control.Applicative ((<$>))
+import Data.Foldable (Foldable(..))
+#endif
+
 import Control.Exception (bracketOnError)
 import Control.Monad (void)
-import Data.Foldable (forM_)
+import Data.Foldable (forM_, foldlM)
 import Data.Set (Set)
 import qualified Data.Set as S
 
@@ -16,7 +22,9 @@ parallelSink input f n =
   parMapM_ bracketOnError (Simple Terminate) n (void . f) input
 
 sequentialFold :: (Foldable f, Ord b) => f a -> (a -> IO b) -> IO (Set b)
-sequentialFold input f = foldMap (fmap S.singleton . f) input
+sequentialFold input f = foldlM foldFun S.empty input
+  where
+    foldFun bs a = (\b -> S.insert b bs) <$> f a
 
 parallelFold
     :: (Foldable f, Ord b) => f a -> (a -> IO b) -> Int -> IO (Set b)

@@ -14,8 +14,8 @@ License-File:       LICENSE
 Category:           System
 Cabal-Version:      >= 1.10
 Build-Type:         Simple
-Tested-With:        GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.3,
-                    GHC == 8.0.2, GHC == 8.2.1, GHC == 8.3.*
+Tested-With:        GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.3, GHC == 8.0.2,
+                    GHC == 8.2.1, GHC == 8.3.*
 
 Synopsis:           
 
@@ -28,7 +28,7 @@ Library
 
   Other-Extensions:     ScopedTypeVariables
 
-  Build-Depends:        base >= 4.5 && < 5
+  Build-Depends:        base >= 4.6 && < 5
                ,        broadcast-chan == 0.1.1
                ,        conduit == 1.2.*
                ,        resourcet == 1.1.*
@@ -43,7 +43,7 @@ Test-Suite conduit
   Build-Depends:        base
                ,        broadcast-chan-conduit
                ,        broadcast-chan-tests == 0.1.0
-               ,        containers == 0.5.*
+               ,        containers >= 0.4 && < 0.6
                ,        conduit == 1.2.*
 
 Source-Repository head

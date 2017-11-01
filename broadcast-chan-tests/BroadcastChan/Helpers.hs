@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
@@ -6,13 +7,17 @@
 {-# LANGUAGE TypeOperators #-}
 module BroadcastChan.Helpers where
 
+#if !MIN_VERSION_base(4,8,0)
+import Control.Applicative ((<$>),(<*>))
+#endif
+
 type family ParamFun (l :: [*]) r
 type instance ParamFun '[] r = String -> r
 type instance ParamFun (h ': t) r = h -> ParamFun t r
 
 data Params :: [*] -> * where
     None :: Params '[]
-    Param :: Show a => String -> (a -> b) -> [a] -> Params l -> Params (b : l)
+    Param :: Show a => String -> (a -> b) -> [a] -> Params l -> Params (b ': l)
 
 buildTree
     :: forall a l

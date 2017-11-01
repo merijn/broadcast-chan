@@ -1,5 +1,4 @@
 import Control.Foldl (purely, set)
-import Control.Monad (void)
 import Data.Set (Set)
 import Pipes
 import qualified Pipes.Prelude as P

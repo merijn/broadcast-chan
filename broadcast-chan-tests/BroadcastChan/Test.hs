@@ -1,4 +1,5 @@
-{-# LANGUAGE NumDecimals #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module BroadcastChan.Test
     ( expect
@@ -12,6 +13,9 @@ module BroadcastChan.Test
     , module Test.Tasty.HUnit
     ) where
 
+#if !MIN_VERSION_base(4,8,0)
+import Control.Applicative ((<$>),(<*>))
+#endif
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (wait, withAsync)
 import Control.Concurrent.MVar
@@ -19,11 +23,10 @@ import Control.Concurrent.STM
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Control.Exception (Exception, try)
 import Data.Bifunctor (second)
-import Data.Function (on)
 import Data.List (sort)
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as M
-import Data.Monoid ((<>))
+import Data.Map (Map)
+import qualified Data.Map as M
+import Data.Monoid ((<>), mconcat)
 import Data.Proxy (Proxy(Proxy))
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -33,13 +36,18 @@ import Data.Typeable (Typeable)
 import Options.Applicative (switch, long, help)
 import System.Clock
     (Clock(Monotonic), TimeSpec, diffTimeSpec, getTime, toNanoSecs)
+#if !MIN_VERSION_base(4,7,0)
+import System.Posix.Env (setEnv)
+#else
 import System.Environment (setEnv)
+#endif
 import System.IO (Handle, SeekMode(AbsoluteSeek), hPrint, hSeek)
 import System.IO.Temp (withSystemTempFile)
 import Test.Tasty
 import Test.Tasty.Golden.Advanced (goldenTest)
 import Test.Tasty.HUnit
 import Test.Tasty.Options
+import Test.Tasty.Travis
 
 import BroadcastChan.Helpers
 
@@ -135,8 +143,11 @@ outputTest
 outputTest seqSink parSink threads inputs label =
     nonDeterministicGolden label seqTest parTest diff (const $ return ())
   where
-    nonDeterministicGolden name =
-      goldenTest name `on` fmap (second (T.strip . T.unlines . sort . T.lines))
+    nonDeterministicGolden name x y =
+      goldenTest name (normalise x) (normalise y)
+
+    normalise :: MonadIO m => IO (a, Text) -> m (a, Text)
+    normalise = liftIO . fmap (second (T.strip . T.unlines . sort . T.lines))
 
     diff :: (r, Text) -> (r, Text) -> IO (Maybe String)
     diff (seqResult, seqOutput) (parResult, parOutput) =
@@ -199,7 +210,7 @@ genStreamTests name f g = askOption $ \(SlowTests slow) ->
                  . Param "inputs"  (enumFromTo 0) [60]
           | otherwise = Param "threads" id [1,2,5]
                       . Param "inputs"  (enumFromTo 0) [30]
-        pause = Param "pause" id [1e6]
+        pause = Param "pause" id [10^(6 :: Int)]
 
     in testGroup name
         [ testTree "output" (outputTest f g) $ params None
@@ -209,10 +220,21 @@ genStreamTests name f g = askOption $ \(SlowTests slow) ->
 runTests :: String -> [TestTree] -> IO ()
 runTests name tests = do
     setEnv "TASTY_NUM_THREADS" "100"
-    defaultMainWithIngredients ingredients $ testGroup name tests
+#if !MIN_VERSION_base(4,7,0)
+        True
+#endif
+    defaultMainWithIngredients ingredients (testGroup name tests)
   where
     ingredients =
-      includingOptions [Option (Proxy :: Proxy SlowTests)] : defaultIngredients
+      [ includingOptions [Option (Proxy :: Proxy SlowTests)]
+      , listingTests
+      , travisTestReporter travisConfig
+      ]
+
+    travisConfig = defaultConfig
+      { travisFoldGroup = FoldMoreThan 1
+      , travisSummaryWhen = SummaryAlways
+      }
 
 withTime :: IO a -> IO (a, TimeSpec)
 withTime act = do

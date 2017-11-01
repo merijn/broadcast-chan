@@ -3,7 +3,7 @@ BroadcastChan: Closable, fair, single-wakeup, broadcast channels
 [![BSD3](https://img.shields.io/badge/License-BSD-blue.svg)](https://en.wikipedia.org/wiki/BSD_License)
 [![Hackage](https://img.shields.io/hackage/v/broadcast-chan.svg)](https://hackage.haskell.org/package/broadcast-chan)
 [![Stackage](https://www.stackage.org/package/broadcast-chan/badge/lts?label=Stackage)](https://www.stackage.org/package/broadcast-chan)
-[![Build Status](https://travis-ci.org/merijn/broadcast-chan.svg)](https://travis-ci.org/merijn/broadcast-chan.svg)
+[![Build Status](https://travis-ci.org/merijn/broadcast-chan.svg)](https://travis-ci.org/merijn/broadcast-chan)
 
 A closable, fair, single-wakeup channel that avoids the 0 reader space leak
 that `Control.Concurrent.Chan` from base suffers from.

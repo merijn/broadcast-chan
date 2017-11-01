@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Safe #-}
@@ -8,6 +9,9 @@ module BroadcastChan.Utils
     , runParallel_
     ) where
 
+#if !MIN_VERSION_base(4,8,0)
+import Control.Applicative ((<*))
+#endif
 import Control.Concurrent
     (ThreadId, forkIOWithUnmask, killThread, mkWeakThreadId, myThreadId)
 import Control.Concurrent.MVar

@@ -14,8 +14,8 @@ License-File:       LICENSE
 Category:           System
 Cabal-Version:      >= 1.10
 Build-Type:         Simple
-Tested-With:        GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.3,
-                    GHC == 8.0.2, GHC == 8.2.1, GHC == 8.3.*
+Tested-With:        GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.3, GHC == 8.0.2,
+                    GHC == 8.2.1, GHC == 8.3.*
 
 Extra-Source-Files: README.md
                   , CHANGELOG.md
@@ -80,6 +80,10 @@ Flag threaded
 Library
   Default-Language:     Haskell2010
   GHC-Options:          -Wall -O2 -fno-warn-unused-do-bind
+
+  if impl(ghc < 7.8)
+    GHC-Options:        -fno-warn-warnings-deprecations
+
   Exposed-Modules:      BroadcastChan
                         BroadcastChan.Prelude
                         BroadcastChan.Throw
@@ -94,8 +98,10 @@ Library
                         Safe
                         ScopedTypeVariables
                         Trustworthy
+                        TupleSections
 
-  Build-Depends:        base >= 4.5 && < 5
+  Build-Depends:        base >= 4.6 && < 5
+
   if impl(ghc < 8.0)
     Build-Depends:      transformers >= 0.2 && < 0.6
 
@@ -131,6 +137,7 @@ Benchmark channels
                         -fno-warn-type-defaults -rtsopts
   if flag(threaded)
     GHC-Options:        -threaded
+
   Hs-Source-Dirs:       benchmarks
 
   Other-Extensions:     BangPatterns
@@ -145,17 +152,14 @@ Benchmark channels
                ,        deepseq >= 1.1 && < 1.5
                ,        stm >= 2.4 && < 2.5
 
-  if impl(ghc < 7.6)
-    Build-Depends:      ghc-prim
-
   if impl(ghc < 7.10)
-    Build-Depends:      bifunctors >= 5.4 && < 5.5
+    Build-Depends:      bifunctors >= 0.1 && < 5.5
 
 Benchmark utilities
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
   Main-Is:              Utils.hs
-  GHC-Options:          -Wall -O2 -Wno-orphans -fno-warn-unused-do-bind
+  GHC-Options:          -Wall -O2 -fno-warn-orphans -fno-warn-unused-do-bind
                         -rtsopts
   if flag(threaded)
     GHC-Options:        -threaded
@@ -193,7 +197,7 @@ Test-Suite parallel-io
   Build-Depends:        base
                ,        broadcast-chan
                ,        broadcast-chan-tests == 0.1.0
-               ,        containers == 0.5.*
+               ,        containers >= 0.4 && < 0.6
 
 Source-Repository head
   Type:     git
