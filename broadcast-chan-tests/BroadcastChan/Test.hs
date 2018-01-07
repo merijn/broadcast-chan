@@ -49,7 +49,7 @@ import Test.Tasty.HUnit
 import Test.Tasty.Options
 import Test.Tasty.Travis
 
-import BroadcastChan.Helpers
+import ParamTree
 
 expect :: (Eq e, Exception e) => e -> IO () -> Assertion
 expect err act = do
@@ -204,17 +204,17 @@ genStreamTests
 genStreamTests name f g = askOption $ \(SlowTests slow) ->
     withResource (newTVarIO M.empty) (const $ return ()) $ \getCache ->
     let
-        testTree = buildTree testGroup
+        testTree = growTree (Just "/") testGroup
         params
-          | slow = Param "threads" id [1,2,5,10]
-                 . Param "inputs"  (enumFromTo 0) [60]
-          | otherwise = Param "threads" id [1,2,5]
-                      . Param "inputs"  (enumFromTo 0) [30]
-        pause = Param "pause" id [10^(6 :: Int)]
+          | slow = simpleParam "threads" [1,2,5]
+                 . derivedParam (enumFromTo 0) "inputs" [60]
+          | otherwise = simpleParam "threads" [1,2,5]
+                      . derivedParam (enumFromTo 0) "inputs" [30]
+        pause = simpleParam "pause" [10^(6 :: Int)]
 
     in testGroup name
-        [ testTree "output" (outputTest f g) $ params None
-        , testTree "speedup" (speedupTest getCache f g) $ params . pause $ None
+        [ testTree "output" (outputTest f g) params
+        , testTree "speedup" (speedupTest getCache f g) $ params . pause
         ]
 
 runTests :: String -> [TestTree] -> IO ()
@@ -223,17 +223,14 @@ runTests name tests = do
 #if !MIN_VERSION_base(4,7,0)
         True
 #endif
-    defaultMainWithIngredients ingredients (testGroup name tests)
+    travisTestReporter travisConfig ingredients $ testGroup name tests
   where
-    ingredients =
-      [ includingOptions [Option (Proxy :: Proxy SlowTests)]
-      , listingTests
-      , travisTestReporter travisConfig
-      ]
+    ingredients = [ includingOptions [Option (Proxy :: Proxy SlowTests)] ]
 
     travisConfig = defaultConfig
       { travisFoldGroup = FoldMoreThan 1
       , travisSummaryWhen = SummaryAlways
+      , travisTestOptions = setOption (SlowTests True)
       }
 
 withTime :: IO a -> IO (a, TimeSpec)
