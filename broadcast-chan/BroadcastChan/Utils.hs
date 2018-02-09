@@ -130,10 +130,12 @@ runParallel bracketOnError run yielder hndl threads work = do
 
         yieldAll :: r -> m r
         yieldAll r = do
-            Just v <- liftIO $ do
+            next <- liftIO $ do
                 closeBChan outChanIn
                 readBChan outChanOut
-            go v r
+            case next of
+                Nothing -> return r
+                Just v -> go v r
           where
             go :: b -> r -> m r
             go b z = do
