@@ -6,6 +6,7 @@ import Data.Acquire
     (ReleaseType(ReleaseException), allocateAcquire, mkAcquireType)
 import Data.Conduit
 import qualified Data.Conduit.List as C
+import Data.Void (Void)
 
 import BroadcastChan hiding (parMapM_)
 import BroadcastChan.Utils (runParallel, runParallel_)
