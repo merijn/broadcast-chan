@@ -30,8 +30,8 @@ Library
 
   Build-Depends:        base >= 4.6 && < 5
                ,        broadcast-chan == 0.1.1
-               ,        conduit == 1.2.*
-               ,        resourcet == 1.1.*
+               ,        conduit >= 1.2 && < 1.4
+               ,        resourcet >= 1.1 && < 1.3
 
 Test-Suite conduit
   Default-Language:     Haskell2010
@@ -44,7 +44,7 @@ Test-Suite conduit
                ,        broadcast-chan-conduit
                ,        broadcast-chan-tests == 0.1.0
                ,        containers >= 0.4 && < 0.6
-               ,        conduit == 1.2.*
+               ,        conduit >= 1.2 && < 1.4
 
 Source-Repository head
   Type:     git

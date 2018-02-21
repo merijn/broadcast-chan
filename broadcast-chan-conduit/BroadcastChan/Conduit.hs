@@ -23,13 +23,14 @@ parMapM
     => Handler a
     -> Int
     -> (a -> IO b)
-    -> Conduit a m b
+    -> ConduitM a b m ()
 parMapM hnd threads = runParallel bracketOnError body (Left yield) hnd threads
   where
-    body :: (a -> m ()) -> (a -> m b) -> Conduit a m b
+    body :: (a -> m ()) -> (a -> m b) -> ConduitT a b m ()
     body buffer process = do
         C.isolate threads .| C.mapM_ buffer
         C.mapM process
 
-parMapM_ :: MonadResource m => Handler a -> Int -> (a -> IO ()) -> Sink a m ()
+parMapM_
+    :: MonadResource m => Handler a -> Int -> (a -> IO ()) -> ConduitM a Void m ()
 parMapM_ = runParallel_ bracketOnError C.mapM_
