@@ -6,7 +6,7 @@ Bug-Reports:        https://github.com/merijn/broadcast-chan/issues
 
 Author:             Merijn Verstraaten
 Maintainer:         Merijn Verstraaten <merijn@inconsistent.nl>
-Copyright:          Copyright © 2014-2017 Merijn Verstraaten
+Copyright:          Copyright © 2014-2018 Merijn Verstraaten
 
 License:            BSD3
 License-File:       LICENSE
@@ -17,9 +17,12 @@ Build-Type:         Simple
 Tested-With:        GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.3, GHC == 8.0.2,
                     GHC == 8.2.2, GHC == 8.4.1, GHC == 8.5.*
 
-Synopsis:           
+Synopsis:           Pipes-based parallel streaming code for broadcast-chan
 
 Description:
+    __WARNING:__ While the code in this library should be fairly stable and
+    production, the API is something I'm still working on. API changes will
+    follow the PVP, but __expect__ breaking API changes in future versions!
 
 Library
   Default-Language:     Haskell2010
@@ -29,7 +32,7 @@ Library
   Other-Extensions:     ScopedTypeVariables
 
   Build-Depends:        base >= 4.6 && < 5
-               ,        broadcast-chan == 0.1.1
+               ,        broadcast-chan == 0.2
                ,        pipes >= 4.1.6 && < 4.4
                ,        pipes-safe == 2.2.*
 

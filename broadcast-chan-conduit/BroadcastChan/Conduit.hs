@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module BroadcastChan.Conduit (module BroadcastChan, parMapM, parMapM_) where
+module BroadcastChan.Conduit (parMapM, parMapM_, module BroadcastChan) where
 
 import Control.Monad.Trans.Resource (MonadResource)
 import Data.Acquire

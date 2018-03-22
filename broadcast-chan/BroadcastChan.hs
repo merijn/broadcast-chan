@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE Safe #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -6,7 +5,7 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  BroadcastChan
--- Copyright   :  (C) 2014-2017 Merijn Verstraaten
+-- Copyright   :  (C) 2014-2018 Merijn Verstraaten
 -- License     :  BSD-style (see the file LICENSE)
 -- Maintainer  :  Merijn Verstraaten <merijn@inconsistent.nl>
 -- Stability   :  experimental
@@ -57,9 +56,7 @@
 module BroadcastChan (
     -- * Datatypes
       BroadcastChan
-#if __GLASGOW_HASKELL__ > 704
     , Direction(..)
-#endif
     , In
     , Out
     -- * Construction
@@ -83,16 +80,13 @@ module BroadcastChan (
 
 import Control.Monad (liftM)
 import Control.Monad.IO.Class (MonadIO(..))
-#if !MIN_VERSION_base(4,8,0)
-import Data.Foldable (Foldable(..))
-#endif
-import Data.Foldable (foldlM, forM_)
+import Data.Foldable as F (Foldable(..), foldlM, forM_)
 
 import BroadcastChan.Internal
 import BroadcastChan.Utils
 
 parMapM_
-    :: (Foldable f, MonadIO m)
+    :: (F.Foldable f, MonadIO m)
     => (forall x . m x -> (x -> m ()) -> (x -> m ()) -> m ())
     -> Handler a
     -> Int
@@ -103,7 +97,7 @@ parMapM_ bracketOnError hndl threads work input =
     runParallel_ bracketOnError (forM_ input) hndl threads work
 
 parFoldMap
-    :: (Foldable f, MonadIO m)
+    :: (F.Foldable f, MonadIO m)
     => (forall x . m x -> (x -> m ()) -> (x -> m r) -> m r)
     -> Handler a
     -> Int
@@ -117,7 +111,7 @@ parFoldMap bracketOnError hndl threads work f =
 
 parFoldMapM
     :: forall a b f m r
-     . (Foldable f, MonadIO m)
+     . (F.Foldable f, MonadIO m)
     => (forall x . m x -> (x -> m ()) -> (x -> m r) -> m r)
     -> Handler a
     -> Int

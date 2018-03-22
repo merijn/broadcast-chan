@@ -1,13 +1,23 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+-------------------------------------------------------------------------------
+-- |
+-- Module      :  BroadcastChan
+-- Copyright   :  (C) 2014-2018 Merijn Verstraaten
+-- License     :  BSD-style (see the file LICENSE)
+-- Maintainer  :  Merijn Verstraaten <merijn@inconsistent.nl>
+-- Stability   :  experimental
+-- Portability :  haha
+--
+-- Module containing testing helpers shared across all broadcast-chan packages.
+-------------------------------------------------------------------------------
 module BroadcastChan.Test
     ( expect
     , doNothing
     , doPrint
     , genStreamTests
     , runTests
-    , withTime
     , MonadIO(..)
     , module Test.Tasty
     , module Test.Tasty.HUnit
@@ -51,6 +61,8 @@ import Test.Tasty.Travis
 
 import ParamTree
 
+-- | Test which fails if the expected exception is not thrown by the 'IO'
+-- action.
 expect :: (Eq e, Exception e) => e -> IO () -> Assertion
 expect err act = do
     result <- try act
@@ -60,12 +72,14 @@ expect err act = do
                                 "Expected: " ++ show err ++ "\nGot: " ++ show e
         Right _ -> assertFailure $ "Expected exception, got success."
 
-doNothing :: (Show a) => Int -> a -> IO a
+-- | Pauses a number of microseconds before returning its input.
+doNothing :: Int -> a -> IO a
 doNothing threadPause x = do
     threadDelay threadPause
     return x
 
-doPrint :: (Show a) => Handle -> a -> IO a
+-- | Print a value, then return it.
+doPrint :: Show a => Handle -> a -> IO a
 doPrint hnd x = do
     hPrint hnd x
     return x
@@ -195,11 +209,22 @@ instance IsOption SlowTests where
       <> help (untag (optionHelp :: Tagged SlowTests String))
       )
 
+-- | Takes a name, a sequential sink, and a parallel sink and generates tasty
+-- tests from these.
+--
+-- The parallel and sequential sink should perform the same tasks so their
+-- results can be compared to check correctness.
+--
+-- The sinks should take a list of input data, a function processing the data,
+-- and return a result that can be compared for equality.
+--
+-- Furthermore the parallel sink should take a number indicating how many
+-- concurrent consumers should be used.
 genStreamTests
     :: (Eq r, Show r)
-    => String
-    -> ([Int] -> (Int -> IO Int) -> IO r)
-    -> ([Int] -> (Int -> IO Int) -> Int -> IO r)
+    => String -- ^ Name to group tests under
+    -> ([Int] -> (Int -> IO Int) -> IO r) -- ^ Sequential sink
+    -> ([Int] -> (Int -> IO Int) -> Int -> IO r) -- ^ Parallel sink
     -> TestTree
 genStreamTests name f g = askOption $ \(SlowTests slow) ->
     withResource (newTVarIO M.empty) (const $ return ()) $ \getCache ->
@@ -217,6 +242,7 @@ genStreamTests name f g = askOption $ \(SlowTests slow) ->
         , testTree "speedup" (speedupTest getCache f g) $ params . pause
         ]
 
+-- | Run a list of 'TestTree''s and group them under the specified name.
 runTests :: String -> [TestTree] -> IO ()
 runTests name tests = do
     setEnv "TASTY_NUM_THREADS" "100"

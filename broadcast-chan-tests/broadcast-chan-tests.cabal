@@ -6,7 +6,7 @@ Bug-Reports:        https://github.com/merijn/broadcast-chan/issues
 
 Author:             Merijn Verstraaten
 Maintainer:         Merijn Verstraaten <merijn@inconsistent.nl>
-Copyright:          Copyright © 2014-2017 Merijn Verstraaten
+Copyright:          Copyright © 2014-2018 Merijn Verstraaten
 
 License:            BSD3
 License-File:       LICENSE
@@ -17,9 +17,11 @@ Build-Type:         Simple
 Tested-With:        GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.3, GHC == 8.0.2,
                     GHC == 8.2.2, GHC == 8.4.1, GHC == 8.5.*
 
-Synopsis:           
+Synopsis:           Helpers for generating tests for broadcast-chan
 
 Description:
+    Provides helpers for implementing the streaming/concurrency tests used by
+    broadcast-chan, broadcast-chan-conduit, and broadcast-chan-pipes.
 
 Library
   Default-Language:     Haskell2010
@@ -31,14 +33,14 @@ Library
                         ScopedTypeVariables
 
   Build-Depends:        base >= 4.6 && < 5
-               ,        async == 2.1.*
+               ,        async >= 2.1 && < 2.3
                ,        clock == 0.7.*
                ,        containers >= 0.4 && < 0.6
                ,        optparse-applicative >= 0.12 && < 0.15
                ,        paramtree >= 0.1.1 && < 0.2
                ,        stm == 2.4.*
                ,        tagged == 0.8.*
-               ,        tasty >= 0.11 && < 0.13
+               ,        tasty >= 0.11 && < 1.1
                ,        tasty-golden >= 2.0 && < 2.4
                ,        tasty-hunit == 0.9.*
                ,        tasty-travis >= 0.2 && < 0.3

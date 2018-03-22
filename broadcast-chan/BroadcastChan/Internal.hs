@@ -16,7 +16,6 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 import Control.Exception (evaluate, onException)
 #endif
 
-#if __GLASGOW_HASKELL__ > 704
 -- | Used with DataKinds as phantom type indicating whether a 'BroadcastChan'
 -- value is a read or write end.
 data Direction = In  -- ^ Indicates a write 'BroadcastChan'
@@ -29,14 +28,6 @@ type In = 'In
 -- | Alias for the 'Out' type from the 'Direction' kind, allows users to write
 -- the @'BroadcastChan' 'Out' a@ type without enabling @DataKinds@.
 type Out = 'Out
-#else
--- | Phantom type to indicates that a 'BroadcastChan' is a write end.
-data In
-
--- | Phantom type to indicates that a 'BroadcastChan' is a read end.
-data Out
-#define Direction *
-#endif
 
 -- | The abstract type representing the read or write end of a 'BroadcastChan'.
 newtype BroadcastChan (d :: Direction) a = BChan (MVar (Stream a))
