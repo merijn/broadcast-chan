@@ -89,6 +89,11 @@ parallelCore pBracketOnError hndl threads f finalise work = join . liftIO $ do
                     f a `catch` handler a
                     processInput
 
+        cleanup :: [Weak ThreadId] -> n ()
+        cleanup threadIds = liftIO $ do
+            mapM_ killWeakThread threadIds
+            waitQSemN endSem threads
+
     return . pBracketOnError (allocate processInput) cleanup $ \_ -> do
         result <- work bufferValue
         liftIO $ do
@@ -108,9 +113,6 @@ parallelCore pBracketOnError hndl threads f finalise work = join . liftIO $ do
         case tid of
             Nothing -> return ()
             Just t -> killThread t
-
-    cleanup :: [Weak ThreadId] -> n ()
-    cleanup = liftIO . mapM_ killWeakThread
 
 runParallel
     :: forall a b f m n r . (MonadIO f, MonadIO m, MonadIO n)
