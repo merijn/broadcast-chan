@@ -13,7 +13,8 @@
 -- Module containing testing helpers shared across all broadcast-chan packages.
 -------------------------------------------------------------------------------
 module BroadcastChan.Test
-    ( expect
+    ( (@?)
+    , expect
     , doNothing
     , doPrint
     , genStreamTests
@@ -55,11 +56,16 @@ import System.IO (Handle, SeekMode(AbsoluteSeek), hPrint, hSeek)
 import System.IO.Temp (withSystemTempFile)
 import Test.Tasty
 import Test.Tasty.Golden.Advanced (goldenTest)
-import Test.Tasty.HUnit
+import Test.Tasty.HUnit hiding ((@?))
+import qualified Test.Tasty.HUnit as HUnit
 import Test.Tasty.Options
 import Test.Tasty.Travis
 
 import ParamTree
+
+infix 0 @?
+(@?) :: IO Bool -> String -> Assertion
+(@?) = (HUnit.@?)
 
 -- | Test which fails if the expected exception is not thrown by the 'IO'
 -- action.
