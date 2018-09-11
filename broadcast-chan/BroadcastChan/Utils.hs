@@ -28,8 +28,8 @@ import BroadcastChan.Internal
 
 -- DANGER! Breaks the invariant that you can't write to closed channels!
 -- Only meant to be used in 'parallelCore'!
-unsafeWriteBChan :: BroadcastChan In a -> a -> IO ()
-unsafeWriteBChan (BChan writeVar) val = do
+unsafeWriteBChan :: MonadIO m => BroadcastChan In a -> a -> m ()
+unsafeWriteBChan (BChan writeVar) val = liftIO $ do
   new_hole <- newEmptyMVar
   mask_ $ do
     old_hole <- takeMVar writeVar
@@ -109,9 +109,8 @@ parallelCore pBracketOnError hndl threads f finalise work = join . liftIO $ do
 
     return . pBracketOnError allocate cleanup $ \_ -> do
         result <- work bufferValue
-        liftIO $ do
-            closeBChan inChanIn
-            waitQSemN endSem threads
+        closeBChan inChanIn
+        liftIO $ waitQSemN endSem threads
         finalise result
   where
     killWeakThread :: Weak ThreadId -> IO ()
@@ -131,15 +130,15 @@ runParallel
     -> (a -> IO b)
     -> m r
 runParallel bracketOnError run yielder hndl threads work = do
-    outChanIn <- liftIO newBroadcastChan
-    outChanOut <- liftIO $ newBChanListener outChanIn
+    outChanIn <- newBroadcastChan
+    outChanOut <- newBChanListener outChanIn
 
     let process :: a -> IO ()
         process = work >=> void . writeBChan outChanIn
 
         yieldAll :: r -> m r
         yieldAll r = do
-            next <- liftIO $ do
+            next <- do
                 closeBChan outChanIn
                 readBChan outChanOut
             case next of
@@ -148,7 +147,7 @@ runParallel bracketOnError run yielder hndl threads work = do
           where
             go :: b -> r -> m r
             go b z = do
-                result <- liftIO $ readBChan outChanOut
+                result <- readBChan outChanOut
                 case result of
                     Nothing -> foldFun z b
                     Just x -> foldFun z b >>= go x
@@ -156,7 +155,7 @@ runParallel bracketOnError run yielder hndl threads work = do
     parallelCore bracketOnError hndl threads process yieldAll $ \bufferValue ->
         let queueAndYield :: a -> f b
             queueAndYield x = do
-                Just v <- liftIO $ readBChan outChanOut <* bufferValue x
+                Just v <- readBChan outChanOut <* liftIO (bufferValue x)
                 return v
         in run (liftIO . bufferValue) queueAndYield
   where

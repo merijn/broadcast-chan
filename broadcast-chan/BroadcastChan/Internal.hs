@@ -38,8 +38,8 @@ type Stream a = MVar (ChItem a)
 data ChItem a = ChItem a {-# UNPACK #-} !(Stream a) | Closed
 
 -- | Creates a new 'BroadcastChan' write end.
-newBroadcastChan :: IO (BroadcastChan In a)
-newBroadcastChan = do
+newBroadcastChan :: MonadIO m => m (BroadcastChan In a)
+newBroadcastChan = liftIO $ do
    hole  <- newEmptyMVar
    writeVar <- newMVar hole
    return (BChan writeVar)
@@ -47,8 +47,8 @@ newBroadcastChan = do
 -- | Close a 'BroadcastChan', disallowing further writes. Returns 'True' if the
 -- 'BroadcastChan' was closed. Returns 'False' if the 'BroadcastChan' was
 -- __already__ closed.
-closeBChan :: BroadcastChan In a -> IO Bool
-closeBChan (BChan writeVar) = mask_ $ do
+closeBChan :: MonadIO m => BroadcastChan In a -> m Bool
+closeBChan (BChan writeVar) = liftIO . mask_ $ do
     old_hole <- takeMVar writeVar
     -- old_hole is always empty unless the channel was already closed
     tryPutMVar old_hole Closed <* putMVar writeVar old_hole
@@ -60,13 +60,13 @@ closeBChan (BChan writeVar) = mask_ $ do
 -- closed by another thread. If multiple threads use the same 'BroadcastChan' a
 -- 'closeBChan' from another thread might result in the channel being closed
 -- right after 'isClosedBChan' returns.
-isClosedBChan :: BroadcastChan In a -> IO Bool
+isClosedBChan :: MonadIO m => BroadcastChan In a -> m Bool
 #if MIN_VERSION_base(4,7,0)
-isClosedBChan (BChan writeVar) = do
+isClosedBChan (BChan writeVar) = liftIO $ do
     old_hole <- readMVar writeVar
     val <- tryReadMVar old_hole
 #else
-isClosedBChan (BChan writeVar) = mask_ $ do
+isClosedBChan (BChan writeVar) = liftIO . mask_ $ do
     old_hole <- takeMVar writeVar
     val <- tryTakeMVar old_hole
     case val of
@@ -86,8 +86,8 @@ isClosedBChan (BChan writeVar) = mask_ $ do
 -- message was written, 'False' is the channel is closed.
 -- See @BroadcastChan.Throw.@'BroadcastChan.Throw.writeBChan' for an
 -- exception throwing variant.
-writeBChan :: BroadcastChan In a -> a -> IO Bool
-writeBChan (BChan writeVar) val = do
+writeBChan :: MonadIO m => BroadcastChan In a -> a -> m Bool
+writeBChan (BChan writeVar) val = liftIO $ do
   new_hole <- newEmptyMVar
   mask_ $ do
     old_hole <- takeMVar writeVar
@@ -103,8 +103,8 @@ writeBChan (BChan writeVar) val = do
 -- 'Nothing' if the 'BroadcastChan' is closed and empty.
 -- See @BroadcastChan.Throw.@'BroadcastChan.Throw.readBChan' for an exception
 -- throwing variant.
-readBChan :: BroadcastChan Out a -> IO (Maybe a)
-readBChan (BChan readVar) = do
+readBChan :: MonadIO m => BroadcastChan Out a -> m (Maybe a)
+readBChan (BChan readVar) = liftIO $ do
   modifyMVarMasked readVar $ \read_end -> do -- Note [modifyMVarMasked]
     -- Use readMVar here, not takeMVar,
     -- else newBChanListener doesn't work
@@ -124,8 +124,8 @@ readBChan (BChan readVar) = do
 
 -- | Create a new read end for a 'BroadcastChan'. Will receive all messages
 -- written to the channel __after__ this read end is created.
-newBChanListener :: BroadcastChan In a -> IO (BroadcastChan Out a)
-newBChanListener (BChan writeVar) = do
+newBChanListener :: MonadIO m => BroadcastChan In a -> m (BroadcastChan Out a)
+newBChanListener (BChan writeVar) = liftIO $ do
    hole       <- readMVar writeVar
    newReadVar <- newMVar hole
    return (BChan newReadVar)
@@ -142,11 +142,11 @@ foldBChan
     -> BroadcastChan In a
     -> m (m b)
 foldBChan step begin done chan = do
-    listen <- liftIO $ newBChanListener chan
+    listen <- newBChanListener chan
     return $ go listen begin
   where
     go listen x = do
-        x' <- liftIO $ readBChan listen
+        x' <- readBChan listen
         case x' of
             Just x'' -> go listen $! step x x''
             Nothing -> return $! done x
@@ -164,12 +164,12 @@ foldBChanM
     -> BroadcastChan In a
     -> m (m b)
 foldBChanM step begin done chan = do
-    listen <- liftIO $ newBChanListener chan
+    listen <- newBChanListener chan
     x0 <- begin
     return $ go listen x0
   where
     go listen x = do
-        x' <- liftIO $ readBChan listen
+        x' <- readBChan listen
         case x' of
             Just x'' -> step x x'' >>= go listen
             Nothing -> done x
