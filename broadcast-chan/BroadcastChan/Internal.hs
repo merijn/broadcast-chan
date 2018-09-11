@@ -129,7 +129,7 @@ newBChanListener (BChan writeVar) = do
    hole       <- readMVar writeVar
    newReadVar <- newMVar hole
    return (BChan newReadVar)
---
+
 -- | Strict fold of the 'BroadcastChan''s elements. Can be used with
 -- "Control.Foldl" from Tekmo's foldl package:
 --
