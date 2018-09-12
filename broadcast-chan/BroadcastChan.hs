@@ -78,50 +78,76 @@ module BroadcastChan (
     , parFoldMapM
     ) where
 
+import Control.Exception
+    (SomeException(..), mask, throwIO, try, uninterruptibleMask_)
 import Control.Monad (liftM)
-import Control.Monad.IO.Class (MonadIO(..))
+import Control.Monad.IO.Unlift (MonadUnliftIO(..), UnliftIO(..))
 import Data.Foldable as F (Foldable(..), foldlM, forM_)
 
 import BroadcastChan.Internal
 import BroadcastChan.Utils
 
+bracketOnError :: MonadUnliftIO m => IO a -> (a -> IO b) -> m c -> m c
+bracketOnError before after thing = withRunInIO $ \run -> mask $ \restore -> do
+  x <- before
+  res1 <- try . restore . run $ thing
+  case res1 of
+    Left (SomeException exc) -> do
+      _ :: Either SomeException b <- try . uninterruptibleMask_ $ after x
+      throwIO exc
+    Right y -> return y
+
 parMapM_
-    :: (F.Foldable f, MonadIO m)
-    => (forall x . m x -> (x -> m ()) -> (x -> m ()) -> m ())
-    -> Handler a
+    :: (F.Foldable f, MonadUnliftIO m)
+    => Handler m a
     -> Int
-    -> (a -> IO ())
+    -> (a -> m ())
     -> f a
     -> m ()
-parMapM_ bracketOnError hndl threads work input =
-    runParallel_ bracketOnError (forM_ input) hndl threads work
+parMapM_ hndl threads workFun input = do
+    UnliftIO runInIO <- askUnliftIO
+
+    (alloc, clean, work) <- runParallel_
+        (mapHandler runInIO hndl)
+        threads
+        (runInIO . workFun)
+        (forM_ input)
+
+    bracketOnError alloc clean work
 
 parFoldMap
-    :: (F.Foldable f, MonadIO m)
-    => (forall x . m x -> (x -> m ()) -> (x -> m r) -> m r)
-    -> Handler a
+    :: (F.Foldable f, MonadUnliftIO m)
+    => Handler m a
     -> Int
-    -> (a -> IO b)
+    -> (a -> m b)
     -> (r -> b -> r)
     -> r
     -> f a
     -> m r
-parFoldMap bracketOnError hndl threads work f =
-  parFoldMapM bracketOnError hndl threads work (\x y -> return (f x y))
+parFoldMap hndl threads work f =
+  parFoldMapM hndl threads work (\x y -> return (f x y))
 
 parFoldMapM
     :: forall a b f m r
-     . (F.Foldable f, MonadIO m)
-    => (forall x . m x -> (x -> m ()) -> (x -> m r) -> m r)
-    -> Handler a
+     . (F.Foldable f, MonadUnliftIO m)
+    => Handler m a
     -> Int
-    -> (a -> IO b)
+    -> (a -> m b)
     -> (r -> b -> m r)
     -> r
     -> f a
     -> m r
-parFoldMapM bracketOnError hndl threads work f z input =
-    runParallel bracketOnError body (Right f) hndl threads work
+parFoldMapM hndl threads workFun f z input = do
+    UnliftIO runInIO <- askUnliftIO
+
+    (alloc, clean, work) <- runParallel
+        (Right f)
+        (mapHandler runInIO hndl)
+        threads
+        (runInIO . workFun)
+        body
+
+    bracketOnError alloc clean work
   where
     body :: (a -> m ()) -> (a -> m b) -> m r
     body send sendRecv = snd `liftM` foldlM wrappedFoldFun (0, z) input

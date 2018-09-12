@@ -13,7 +13,7 @@ sequentialSink inputs f =
 
 parallelSink :: [a] -> (a -> IO b) -> Int -> IO ()
 parallelSink inputs f n = runConduitRes $
-    C.sourceList inputs .| parMapM_ (Simple Terminate) n (void . f)
+    C.sourceList inputs .| parMapM_ (Simple Terminate) n (liftIO . void . f)
 
 sequentialFold :: Ord b => [a] -> (a -> IO b) -> IO (Set b)
 sequentialFold inputs f = runConduitRes $
@@ -22,7 +22,7 @@ sequentialFold inputs f = runConduitRes $
 parallelFold :: Ord b => [a] -> (a -> IO b) -> Int -> IO (Set b)
 parallelFold inputs f n = runConduitRes $
     C.sourceList inputs
-        .| parMapM (Simple Terminate) n f
+        .| parMapM (Simple Terminate) n (liftIO . f)
         .| C.foldMap S.singleton
 
 main :: IO ()

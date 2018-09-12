@@ -238,10 +238,10 @@ genStreamTests name f g = askOption $ \(SlowTests slow) ->
         testTree = growTree (Just "/") testGroup
         params
           | slow = simpleParam "threads" [1,2,5]
-                 . derivedParam (enumFromTo 0) "inputs" [60]
+                 . derivedParam (enumFromTo 0) "inputs" [600]
           | otherwise = simpleParam "threads" [1,2,5]
-                      . derivedParam (enumFromTo 0) "inputs" [30]
-        pause = simpleParam "pause" [10^(6 :: Int)]
+                      . derivedParam (enumFromTo 0) "inputs" [300]
+        pause = simpleParam "pause" [10^(5 :: Int)]
 
     in testGroup name
         [ testTree "output" (outputTest f g) params

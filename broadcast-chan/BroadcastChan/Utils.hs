@@ -6,6 +6,7 @@
 module BroadcastChan.Utils
     ( Action(..)
     , Handler(..)
+    , mapHandler
     , runParallel
     , runParallel_
     ) where
@@ -20,7 +21,7 @@ import Control.Concurrent.QSem
 import Control.Concurrent.QSemN
 import Control.Exception
     (Exception(..), SomeException(..), catch, mask_, throwIO, throwTo)
-import Control.Monad ((>=>), join, replicateM, void)
+import Control.Monad ((>=>), replicateM, void)
 import Control.Monad.IO.Class (MonadIO(..))
 import Data.Typeable (Typeable)
 import System.Mem.Weak (Weak, deRefWeak)
@@ -49,22 +50,24 @@ instance Exception Shutdown
 
 data Action = Drop | Retry | Terminate deriving (Eq, Show)
 
-data Handler a
+data Handler m a
     = Simple Action
-    | Handle (a -> SomeException -> IO Action)
+    | Handle (a -> SomeException -> m Action)
+
+mapHandler :: (m Action -> n Action) -> Handler m a -> Handler n a
+mapHandler _ (Simple act) = Simple act
+mapHandler mmorph (Handle f) = Handle $ \a exc -> mmorph (f a exc)
 
 -- Workhorse function for runParallel_ and runParallel. Spawns threads, sets up
 -- error handling, thread termination, etc.
 parallelCore
-    :: forall a m n r . (MonadIO m, MonadIO n)
-    => (forall x . n x -> (x -> n ()) -> (x -> m r) -> m r)
-    -> Handler a
+    :: forall a m
+     . MonadIO m
+    => Handler IO a
     -> Int
     -> (a -> IO ())
-    -> (r -> m r)
-    -> ((a -> IO ()) -> m r)
-    -> m r
-parallelCore pBracketOnError hndl threads f finalise work = join . liftIO $ do
+    -> m (IO [Weak ThreadId], [Weak ThreadId] -> IO (), a -> IO (), m ())
+parallelCore hndl threads f = liftIO $ do
     originTid <- myThreadId
     inChanIn <- newBroadcastChan
     inChanOut <- newBChanListener inChanIn
@@ -97,22 +100,23 @@ parallelCore pBracketOnError hndl threads f finalise work = join . liftIO $ do
                     f a `catch` handler a
                     processInput
 
-        allocate :: n [Weak ThreadId]
+        allocate :: IO [Weak ThreadId]
         allocate = liftIO $ do
             tids <- replicateM threads $
                 forkFinally processInput (\_ -> signalQSemN shutdownSem 1)
             mapM mkWeakThreadId tids
 
-        cleanup :: [Weak ThreadId] -> n ()
+        cleanup :: [Weak ThreadId] -> IO ()
         cleanup threadIds = liftIO $ do
             mapM_ killWeakThread threadIds
             waitQSemN shutdownSem threads
 
-    return . pBracketOnError allocate cleanup $ \_ -> do
-        result <- work bufferValue
-        closeBChan inChanIn
-        liftIO $ waitQSemN endSem threads
-        finalise result
+        wait :: m ()
+        wait = do
+            closeBChan inChanIn
+            liftIO $ waitQSemN endSem threads
+
+    return (allocate, cleanup, bufferValue, wait)
   where
     killWeakThread :: Weak ThreadId -> IO ()
     killWeakThread wTid = do
@@ -122,65 +126,71 @@ parallelCore pBracketOnError hndl threads f finalise work = join . liftIO $ do
             Just t -> throwTo t Shutdown
 
 runParallel
-    :: forall a b f m n r . (MonadIO f, MonadIO m, MonadIO n)
-    => (forall x . n x -> (x -> n ()) -> (x -> m r) -> m r)
-    -> ((a -> f ()) -> (a -> f b) -> m r)
-    -> Either (b -> m r) (r -> b -> m r)
-    -> Handler a
+    :: forall a b m n r
+     . (MonadIO m, MonadIO n)
+    => Either (b -> n r) (r -> b -> n r)
+    -> Handler IO a
     -> Int
     -> (a -> IO b)
-    -> m r
-runParallel bracketOnError run yielder hndl threads work = do
+    -> ((a -> m ()) -> (a -> m b) -> n r)
+    -> n (IO [Weak ThreadId], [Weak ThreadId] -> IO (), n r)
+runParallel yielder hndl threads work pipe = do
     outChanIn <- newBroadcastChan
     outChanOut <- newBChanListener outChanIn
 
-    let process :: a -> IO ()
-        process = work >=> void . writeBChan outChanIn
+    let process :: MonadIO f => a -> f ()
+        process = liftIO . (work >=> void . writeBChan outChanIn)
 
-        yieldAll :: r -> m r
-        yieldAll r = do
-            next <- do
-                closeBChan outChanIn
-                readBChan outChanOut
+    (alloc, cleanup, bufferValue, wait) <- parallelCore hndl threads process
+
+    let queueAndYield :: a -> m b
+        queueAndYield x = do
+            Just v <- liftIO $ readBChan outChanOut <* bufferValue x
+            return v
+
+        finish :: r -> n r
+        finish r = do
+            wait
+            closeBChan outChanIn
+            next <- readBChan outChanOut
             case next of
                 Nothing -> return r
                 Just v -> go v r
           where
-            go :: b -> r -> m r
+            go :: b -> r -> n r
             go b z = do
                 result <- readBChan outChanOut
                 case result of
                     Nothing -> foldFun z b
                     Just x -> foldFun z b >>= go x
 
-    parallelCore bracketOnError hndl threads process yieldAll $ \bufferValue ->
-        let queueAndYield :: a -> f b
-            queueAndYield x = do
-                Just v <- readBChan outChanOut <* liftIO (bufferValue x)
-                return v
-        in run (liftIO . bufferValue) queueAndYield
+    return (alloc, cleanup, pipe process queueAndYield >>= finish)
   where
     foldFun = case yielder of
         Left g -> const g
         Right g -> g
 
 runParallel_
-    :: forall a f m n r . (MonadIO f, MonadIO m, MonadIO n)
-    => (forall x . n x -> (x -> n ()) -> (x -> m r) -> m r)
-    -> ((a -> f ()) -> m r)
-    -> Handler a
+    :: forall a m n r
+     . (MonadIO m, MonadIO n)
+    => Handler IO a
     -> Int
     -> (a -> IO ())
-    -> m r
-runParallel_ bracketOnError run hndl threads work = do
+    -> ((a -> m ()) -> n r)
+    -> n (IO [Weak ThreadId], [Weak ThreadId] -> IO (), n r)
+runParallel_ hndl threads workFun processElems = do
     sem <- liftIO $ newQSem threads
 
     let process :: a -> IO ()
-        process x = signalQSem sem >> work x
+        process x = signalQSem sem >> workFun x
 
-    parallelCore bracketOnError hndl threads process return $ \bufferValue ->
-        let rateLimitedBuffer :: a -> f ()
-            rateLimitedBuffer x = liftIO $ do
+    (alloc, cleanup, bufferValue, wait) <- parallelCore hndl threads process
+
+    let rateLimitedWork = do
+            result <- processElems $ \v -> liftIO $ do
                 waitQSem sem
-                bufferValue x
-        in run rateLimitedBuffer
+                bufferValue v
+            wait
+            return result
+
+    return (alloc, cleanup, rateLimitedWork)
