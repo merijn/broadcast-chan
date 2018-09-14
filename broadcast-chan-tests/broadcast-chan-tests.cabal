@@ -52,7 +52,7 @@ Library
     Build-Depends:      unix >= 2.0 && < 2.8
 
   if impl(ghc < 7.10)
-    Build-Depends:      bifunctors >= 0.1 && < 5.5
+    Build-Depends:      bifunctors >= 0.1 && < 5.6
 
   if impl(ghc < 8.0)
     Build-Depends:      transformers >= 0.2 && < 0.6
