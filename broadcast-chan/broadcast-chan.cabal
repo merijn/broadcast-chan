@@ -98,7 +98,7 @@ Library
                         DataKinds
                         DeriveDataTypeable
                         KindSignatures
-                        RankNTypes
+                        NamedFieldPuns
                         Safe
                         ScopedTypeVariables
                         Trustworthy

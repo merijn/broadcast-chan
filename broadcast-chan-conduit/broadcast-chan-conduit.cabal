@@ -29,7 +29,8 @@ Library
   GHC-Options:          -Wall -O2 -fno-warn-unused-do-bind
   Exposed-Modules:      BroadcastChan.Conduit
 
-  Other-Extensions:     ScopedTypeVariables
+  Other-Extensions:     NamedFieldPuns
+                        ScopedTypeVariables
 
   Build-Depends:        base >= 4.6 && < 5
                ,        broadcast-chan == 0.2.*

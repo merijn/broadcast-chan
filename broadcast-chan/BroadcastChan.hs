@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE Safe #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
@@ -107,13 +107,13 @@ parMapM_
 parMapM_ hndl threads workFun input = do
     UnliftIO runInIO <- askUnliftIO
 
-    (alloc, clean, work) <- runParallel_
+    Bracket{allocate,cleanup,action} <- runParallel_
         (mapHandler runInIO hndl)
         threads
         (runInIO . workFun)
         (forM_ input)
 
-    bracketOnError alloc clean work
+    bracketOnError allocate cleanup action
 
 parFoldMap
     :: (F.Foldable f, MonadUnliftIO m)
@@ -140,14 +140,14 @@ parFoldMapM
 parFoldMapM hndl threads workFun f z input = do
     UnliftIO runInIO <- askUnliftIO
 
-    (alloc, clean, work) <- runParallel
+    Bracket{allocate,cleanup,action} <- runParallel
         (Right f)
         (mapHandler runInIO hndl)
         threads
         (runInIO . workFun)
         body
 
-    bracketOnError alloc clean work
+    bracketOnError allocate cleanup action
   where
     body :: (a -> m ()) -> (a -> m b) -> m r
     body send sendRecv = snd `liftM` foldlM wrappedFoldFun (0, z) input

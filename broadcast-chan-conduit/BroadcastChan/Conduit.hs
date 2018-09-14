@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module BroadcastChan.Conduit (parMapM, parMapM_, module BroadcastChan) where
 
@@ -11,7 +12,8 @@ import qualified Data.Conduit.List as C
 import Data.Void (Void)
 
 import BroadcastChan hiding (parMapM_)
-import BroadcastChan.Utils (mapHandler, runParallel, runParallel_)
+import BroadcastChan.Utils
+    (BracketOnError(..), mapHandler, runParallel, runParallel_)
 
 bracketOnError :: MonadResource m => IO a -> (a -> IO ()) -> m r -> m r
 bracketOnError alloc clean work =
@@ -29,14 +31,14 @@ parMapM
 parMapM hnd threads workFun = do
     UnliftIO runInIO <- lift askUnliftIO
 
-    (alloc, clean, work) <- runParallel
+    Bracket{allocate,cleanup,action} <- runParallel
         (Left yield)
         (mapHandler runInIO hnd)
         threads
         (runInIO . workFun)
         body
 
-    bracketOnError alloc clean work
+    bracketOnError allocate cleanup action
   where
     body :: Monad m => (a -> m ()) -> (a -> m b) -> ConduitM a b m ()
     body buffer process = do
@@ -52,10 +54,10 @@ parMapM_
 parMapM_ hnd threads workFun = do
     UnliftIO runInIO <- lift askUnliftIO
 
-    (alloc, clean, work) <- runParallel_
+    Bracket{allocate,cleanup,action} <- runParallel_
         (mapHandler runInIO hnd)
         threads
         (runInIO . workFun)
         C.mapM_
 
-    bracketOnError alloc clean work
+    bracketOnError allocate cleanup action

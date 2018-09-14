@@ -1,10 +1,11 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Safe #-}
 module BroadcastChan.Utils
     ( Action(..)
+    , BracketOnError(..)
     , Handler(..)
     , mapHandler
     , runParallel
@@ -53,6 +54,17 @@ data Action = Drop | Retry | Terminate deriving (Eq, Show)
 data Handler m a
     = Simple Action
     | Handle (a -> SomeException -> m Action)
+
+data BracketOnError m r
+    = Bracket
+    { allocate :: IO [Weak ThreadId]
+    -- ^ Allocation action that spawn threads and sets up handlers.
+    , cleanup :: [Weak ThreadId] -> IO ()
+    -- ^ Cleanup action that handles exceptional termination
+    , action :: m r
+    -- ^ Action that performs actual processing and waits for processing to
+    --   finish and threads to terminate.
+    }
 
 mapHandler :: (m Action -> n Action) -> Handler m a -> Handler n a
 mapHandler _ (Simple act) = Simple act
@@ -133,7 +145,7 @@ runParallel
     -> Int
     -> (a -> IO b)
     -> ((a -> m ()) -> (a -> m b) -> n r)
-    -> n (IO [Weak ThreadId], [Weak ThreadId] -> IO (), n r)
+    -> n (BracketOnError n r)
 runParallel yielder hndl threads work pipe = do
     outChanIn <- newBroadcastChan
     outChanOut <- newBChanListener outChanIn
@@ -141,7 +153,7 @@ runParallel yielder hndl threads work pipe = do
     let process :: MonadIO f => a -> f ()
         process = liftIO . (work >=> void . writeBChan outChanIn)
 
-    (alloc, cleanup, bufferValue, wait) <- parallelCore hndl threads process
+    (allocate, cleanup, bufferValue, wait) <- parallelCore hndl threads process
 
     let queueAndYield :: a -> m b
         queueAndYield x = do
@@ -164,33 +176,34 @@ runParallel yielder hndl threads work pipe = do
                     Nothing -> foldFun z b
                     Just x -> foldFun z b >>= go x
 
-    return (alloc, cleanup, pipe process queueAndYield >>= finish)
+        action :: n r
+        action = pipe process queueAndYield >>= finish
+
+    return Bracket{allocate,cleanup,action}
   where
     foldFun = case yielder of
         Left g -> const g
         Right g -> g
 
 runParallel_
-    :: forall a m n r
-     . (MonadIO m, MonadIO n)
+    :: (MonadIO m, MonadIO n)
     => Handler IO a
     -> Int
     -> (a -> IO ())
     -> ((a -> m ()) -> n r)
-    -> n (IO [Weak ThreadId], [Weak ThreadId] -> IO (), n r)
+    -> n (BracketOnError n r)
 runParallel_ hndl threads workFun processElems = do
     sem <- liftIO $ newQSem threads
 
-    let process :: a -> IO ()
-        process x = signalQSem sem >> workFun x
+    let process x = signalQSem sem >> workFun x
 
-    (alloc, cleanup, bufferValue, wait) <- parallelCore hndl threads process
+    (allocate, cleanup, bufferValue, wait) <- parallelCore hndl threads process
 
-    let rateLimitedWork = do
+    let action = do
             result <- processElems $ \v -> liftIO $ do
                 waitQSem sem
                 bufferValue v
             wait
             return result
 
-    return (alloc, cleanup, rateLimitedWork)
+    return Bracket{allocate,cleanup,action}
