@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 -------------------------------------------------------------------------------
 -- |
--- Module      :  BroadcastChan
+-- Module      :  BroadcastChan.Test
 -- Copyright   :  (C) 2014-2018 Merijn Verstraaten
 -- License     :  BSD-style (see the file LICENSE)
 -- Maintainer  :  Merijn Verstraaten <merijn@inconsistent.nl>
@@ -20,6 +20,7 @@ module BroadcastChan.Test
     , genStreamTests
     , runTests
     , MonadIO(..)
+    -- * Re-exports of @tasty@ and @tasty-hunit@
     , module Test.Tasty
     , module Test.Tasty.HUnit
     ) where
@@ -64,6 +65,8 @@ import Test.Tasty.Travis
 import ParamTree
 
 infix 0 @?
+-- | Monomorphised version of 'Test.Tasty.HUnit.@?' to avoid ambiguous type
+-- errors when combined with predicates that are @MonadIO m => m Bool@.
 (@?) :: IO Bool -> String -> Assertion
 (@?) = (HUnit.@?)
 

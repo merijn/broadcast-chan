@@ -21,11 +21,18 @@ bracketOnError alloc clean work =
     cleanup x ReleaseException = clean x
     cleanup _ _ = return ()
 
+-- | Create a conduit that processes inputs in parallel.
+--
+-- This function does *NOT* guarantee that input elements are processed or
+-- output in a deterministic order!
 parMapM
     :: (MonadResource m, MonadUnliftIO m)
     => Handler m a
+    -- ^ Exception handler
     -> Int
+    -- ^ Number of parallel threads to use
     -> (a -> m b)
+    -- ^ Function to run in parallel
     -> ConduitM a b m ()
 parMapM hnd threads workFun = do
     UnliftIO runInIO <- lift askUnliftIO
@@ -44,11 +51,18 @@ parMapM hnd threads workFun = do
         C.isolate threads .| C.mapM_ buffer
         C.mapM process
 
+-- | Create a conduit sink that consumes inputs in parallel.
+--
+-- This function does *NOT* guarantee that input elements are processed or
+-- output in a deterministic order!
 parMapM_
     :: (MonadResource m, MonadUnliftIO m)
     => Handler m a
+    -- ^ Exception handler
     -> Int
+    -- ^ Number of parallel threads to use
     -> (a -> m ())
+    -- ^ Function to run in parallel
     -> ConduitM a Void m ()
 parMapM_ hnd threads workFun = do
     UnliftIO runInIO <- lift askUnliftIO

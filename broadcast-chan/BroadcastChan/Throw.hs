@@ -9,16 +9,17 @@
 -- Stability   :  experimental
 -- Portability :  haha
 --
--- Re-export of "Broadcast" that replaces
+-- This module is identical to "BroadcastChan", but with
 -- @BroadcastChan.@'BroadcastChan.writeBChan' and
--- @BroadcastChan.@'BroadcastChan.readBChan' with versions that throw an
--- exception, rather than returning results that the user has to inspect to
+-- @BroadcastChan.@'BroadcastChan.readBChan' replaced with versions that throw
+-- an exception, rather than returning results that the user has to inspect to
 -- check for success.
 -------------------------------------------------------------------------------
 module BroadcastChan.Throw
     ( BChanError(..)
     , readBChan
     , writeBChan
+    -- * Re-exports from "BroadcastChan"
     , module BroadcastChan
     ) where
 

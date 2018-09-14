@@ -97,12 +97,20 @@ bracketOnError before after thing = withRunInIO $ \run -> mask $ \restore -> do
       throwIO exc
     Right y -> return y
 
+-- | Map a monadic function over a 'Foldable', processing elements in parallel.
+--
+-- This function does *NOT* guarantee that elements are processed in a
+-- deterministic order!
 parMapM_
     :: (F.Foldable f, MonadUnliftIO m)
     => Handler m a
+    -- ^ Exception handler
     -> Int
+    -- ^ Number of parallel threads to use
     -> (a -> m ())
+    -- ^ Function to run in parallel
     -> f a
+    -- ^ The 'Foldable' to process in parallel
     -> m ()
 parMapM_ hndl threads workFun input = do
     UnliftIO runInIO <- askUnliftIO
@@ -115,27 +123,48 @@ parMapM_ hndl threads workFun input = do
 
     bracketOnError allocate cleanup action
 
+-- | Like 'parMapM_', but folds the individual results into single result
+-- value.
+--
+-- This function does *NOT* guarantee that elements are processed in a
+-- deterministic order!
 parFoldMap
     :: (F.Foldable f, MonadUnliftIO m)
     => Handler m a
+    -- ^ Exception handler
     -> Int
+    -- ^ Number of parallel threads to use
     -> (a -> m b)
+    -- ^ Function to run in parallel
     -> (r -> b -> r)
+    -- ^ Function to fold results with
     -> r
+    -- ^ Zero element for the fold
     -> f a
+    -- ^ The 'Foldable' to process
     -> m r
 parFoldMap hndl threads work f =
   parFoldMapM hndl threads work (\x y -> return (f x y))
 
+-- | Like 'parFoldMap', but uses a monadic fold function.
+--
+-- This function does *NOT* guarantee that elements are processed in a
+-- deterministic order!
 parFoldMapM
     :: forall a b f m r
      . (F.Foldable f, MonadUnliftIO m)
     => Handler m a
+    -- ^ Exception handler
     -> Int
+    -- ^ Number of parallel threads to use
     -> (a -> m b)
+    -- ^ Function to run in parallel
     -> (r -> b -> m r)
+    -- ^ Monadic function to fold results with
     -> r
+    -- ^ Zero element for the fold
     -> f a
+    -- ^ The 'Foldable' to process
     -> m r
 parFoldMapM hndl threads workFun f z input = do
     UnliftIO runInIO <- askUnliftIO
