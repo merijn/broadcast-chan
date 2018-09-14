@@ -1,4 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module BroadcastChan.Conduit.Internal (parMapM, parMapM_) where
 

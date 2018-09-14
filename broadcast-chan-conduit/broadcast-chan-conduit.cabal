@@ -32,7 +32,9 @@ Library
   Other-Modules:        BroadcastChan.Conduit.Internal
 
   Other-Extensions:     NamedFieldPuns
+                        Safe
                         ScopedTypeVariables
+                        Trustworthy
 
   Build-Depends:        base >= 4.6 && < 5
                ,        broadcast-chan == 0.2.*

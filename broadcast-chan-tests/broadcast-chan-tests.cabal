@@ -31,6 +31,7 @@ Library
   Other-Extensions:     CPP
                         DeriveDataTypeable
                         ScopedTypeVariables
+                        Trustworthy
 
   Build-Depends:        base >= 4.6 && < 5
                ,        async >= 2.1 && < 2.3

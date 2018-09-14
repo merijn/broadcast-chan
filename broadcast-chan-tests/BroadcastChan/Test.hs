@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 -------------------------------------------------------------------------------
 -- |
