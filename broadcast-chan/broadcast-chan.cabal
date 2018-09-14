@@ -89,9 +89,9 @@ Library
     GHC-Options:        -fno-warn-warnings-deprecations
 
   Exposed-Modules:      BroadcastChan
+                        BroadcastChan.Extra
                         BroadcastChan.Prelude
                         BroadcastChan.Throw
-                        BroadcastChan.Utils
   Other-Modules:        BroadcastChan.Internal
 
   Other-Extensions:     CPP

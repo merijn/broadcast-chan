@@ -28,6 +28,8 @@ Library
   Default-Language:     Haskell2010
   GHC-Options:          -Wall -O2 -fno-warn-unused-do-bind
   Exposed-Modules:      BroadcastChan.Conduit
+                        BroadcastChan.Conduit.Throw
+  Other-Modules:        BroadcastChan.Conduit.Internal
 
   Other-Extensions:     NamedFieldPuns
                         ScopedTypeVariables

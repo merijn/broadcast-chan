@@ -3,7 +3,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Safe #-}
-module BroadcastChan.Utils
+module BroadcastChan.Extra
     ( Action(..)
     , BracketOnError(..)
     , Handler(..)

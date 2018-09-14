@@ -84,8 +84,8 @@ import Control.Monad (liftM)
 import Control.Monad.IO.Unlift (MonadUnliftIO(..), UnliftIO(..))
 import Data.Foldable as F (Foldable(..), foldlM, forM_)
 
+import BroadcastChan.Extra
 import BroadcastChan.Internal
-import BroadcastChan.Utils
 
 bracketOnError :: MonadUnliftIO m => IO a -> (a -> IO b) -> m c -> m c
 bracketOnError before after thing = withRunInIO $ \run -> mask $ \restore -> do
