@@ -68,14 +68,17 @@ module BroadcastChan (
     , closeBChan
     , isClosedBChan
     -- * Utility functions
-    , foldBChan
-    , foldBChanM
     , getBChanContents
+    -- ** Parallel processing
     , Action(..)
     , Handler(..)
     , parMapM_
     , parFoldMap
     , parFoldMapM
+    -- ** Foldl combinators
+    -- $foldl
+    , foldBChan
+    , foldBChanM
     ) where
 
 import Control.Exception
@@ -185,3 +188,6 @@ parFoldMapM hndl threads workFun f z input = do
         wrappedFoldFun (i, x) a
             | i == threads = liftM (i,) $ sendRecv a >>= f x
             | otherwise = const (i+1, x) `liftM` send a
+
+-- $foldl
+-- Combinators for use with Tekmo's @foldl@ package.

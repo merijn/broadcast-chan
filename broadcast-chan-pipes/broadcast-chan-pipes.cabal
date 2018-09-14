@@ -36,7 +36,7 @@ Library
                         ScopedTypeVariables
 
   Build-Depends:        base >= 4.6 && < 5
-               ,        broadcast-chan == 0.2
+               ,        broadcast-chan == 0.2.0
                ,        pipes >= 4.1.6 && < 4.4
                ,        pipes-safe == 2.2.*
 
@@ -44,7 +44,7 @@ Test-Suite pipes
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
   Main-Is:              PipeTest.hs
-  GHC-Options:          -Wall -O0 -fno-warn-unused-do-bind
+  GHC-Options:          -Wall -fno-warn-unused-do-bind
   Hs-Source-Dirs:       tests
   Build-Depends:        base
                ,        broadcast-chan-pipes

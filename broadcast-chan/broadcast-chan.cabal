@@ -1,5 +1,5 @@
 Name:               broadcast-chan
-Version:            0.2
+Version:            0.2.0
 
 Homepage:           https://github.com/merijn/broadcast-chan
 Bug-Reports:        https://github.com/merijn/broadcast-chan/issues
@@ -177,7 +177,7 @@ Test-Suite basic
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
   Main-Is:              Basic.hs
-  GHC-Options:          -Wall -threaded -O0 -fno-warn-unused-do-bind
+  GHC-Options:          -Wall -threaded -fno-warn-unused-do-bind
   Hs-Source-Dirs:       tests
   Build-Depends:        base
                ,        broadcast-chan
@@ -187,7 +187,7 @@ Test-Suite basic-unthreaded
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
   Main-Is:              Basic.hs
-  GHC-Options:          -Wall -O0 -fno-warn-unused-do-bind
+  GHC-Options:          -Wall -fno-warn-unused-do-bind
   Hs-Source-Dirs:       tests
   Build-Depends:        base
                ,        broadcast-chan

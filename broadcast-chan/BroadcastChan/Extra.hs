@@ -98,6 +98,7 @@ data BracketOnError m r
     --   finish and threads to terminate.
     }
 
+-- | Convenience function for changing the monad the exception handler runs in.
 mapHandler :: (m Action -> n Action) -> Handler m a -> Handler n a
 mapHandler _ (Simple act) = Simple act
 mapHandler mmorph (Handle f) = Handle $ \a exc -> mmorph (f a exc)
