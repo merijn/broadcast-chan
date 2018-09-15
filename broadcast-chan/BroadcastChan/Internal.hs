@@ -9,7 +9,7 @@ import Control.Applicative ((<*))
 #endif
 import Control.Concurrent.MVar
 import Control.Exception (mask_)
-import Control.Monad.IO.Class (MonadIO(..))
+import Control.Monad.IO.Unlift (MonadIO(..))
 import System.IO.Unsafe (unsafeInterleaveIO)
 
 #if !MIN_VERSION_base(4,6,0)

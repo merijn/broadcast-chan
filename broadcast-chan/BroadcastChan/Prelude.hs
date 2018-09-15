@@ -17,7 +17,7 @@ module BroadcastChan.Prelude
     ) where
 
 import Prelude hiding (mapM_)
-import Control.Monad.IO.Class (MonadIO(..))
+import Control.Monad.IO.Unlift (MonadIO(..))
 
 import BroadcastChan
 

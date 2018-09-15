@@ -40,7 +40,7 @@ import Control.Concurrent.QSemN
 import Control.Exception
     (Exception(..), SomeException(..), catch, mask_, throwIO, throwTo)
 import Control.Monad ((>=>), replicateM, void)
-import Control.Monad.IO.Class (MonadIO(..))
+import Control.Monad.IO.Unlift (MonadIO(..))
 import Data.Typeable (Typeable)
 import System.Mem.Weak (Weak, deRefWeak)
 

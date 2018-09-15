@@ -107,9 +107,6 @@ Library
   Build-Depends:        base >= 4.6 && < 5
                ,        unliftio-core >= 0.1.1 && < 0.2
 
-  if impl(ghc < 8.0)
-    Build-Depends:      transformers >= 0.2 && < 0.6
-
 Benchmark sync
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
