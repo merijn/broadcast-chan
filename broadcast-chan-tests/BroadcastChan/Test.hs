@@ -156,6 +156,53 @@ speedupTest getCache seqSink parSink n inputs pause name = testCase name $ do
                 timed (seqSink inputs testFun) >>= putMVar mvar
                 readMVar mvar
 
+nonDeterministicGolden
+    :: forall r
+     . (Eq r, Show r)
+    => String
+    -> (Handle -> IO r)
+    -> (Handle -> IO r)
+    -> TestTree
+nonDeterministicGolden label controlAction testAction =
+  goldenTest label (normalise control) (normalise test) diff update
+  where
+    normalise :: MonadIO m => IO (a, Text) -> m (a, Text)
+    normalise = liftIO . fmap (second (T.strip . T.unlines . sort . T.lines))
+
+    rewindAndRead :: Handle -> IO Text
+    rewindAndRead hnd = do
+        hSeek hnd AbsoluteSeek 0
+        T.hGetContents hnd
+
+    control :: IO (r, Text)
+    control = withSystemTempFile "control.out" $ \_ hndl ->
+        (,) <$> controlAction hndl <*> rewindAndRead hndl
+
+    test :: IO (r, Text)
+    test = withSystemTempFile "test.out" $ \_ hndl ->
+        (,) <$> testAction hndl <*> rewindAndRead hndl
+
+    diff :: (r, Text) -> (r, Text) -> IO (Maybe String)
+    diff (controlResult, controlOutput) (testResult, testOutput) =
+        return $ resultDiff <> outputDiff
+      where
+        resultDiff :: Maybe String
+        resultDiff
+            | controlResult == testResult = Nothing
+            | otherwise = Just "Results differ!\n"
+
+        outputDiff :: Maybe String
+        outputDiff
+            | controlOutput == testOutput = Nothing
+            | otherwise = Just . mconcat $
+                [ "Outputs differ!\n"
+                , "Expected:\n\"", T.unpack controlOutput, "\"\n\n"
+                , "Got:\n\"", T.unpack testOutput, "\"\n"
+                ]
+
+    update :: (r, Text) -> IO ()
+    update _ = return ()
+
 outputTest
     :: forall r . (Eq r, Show r)
     => ([Int] -> (Int -> IO Int) -> IO r)
@@ -165,44 +212,13 @@ outputTest
     -> String
     -> TestTree
 outputTest seqSink parSink threads inputs label =
-    nonDeterministicGolden label seqTest parTest diff (const $ return ())
+    nonDeterministicGolden label seqTest parTest
   where
-    nonDeterministicGolden name x y =
-      goldenTest name (normalise x) (normalise y)
+    seqTest :: Handle -> IO r
+    seqTest = seqSink inputs . doPrint
 
-    normalise :: MonadIO m => IO (a, Text) -> m (a, Text)
-    normalise = liftIO . fmap (second (T.strip . T.unlines . sort . T.lines))
-
-    diff :: (r, Text) -> (r, Text) -> IO (Maybe String)
-    diff (seqResult, seqOutput) (parResult, parOutput) =
-        return $ resultDiff <> outputDiff
-      where
-        resultDiff :: Maybe String
-        resultDiff
-            | seqResult == parResult = Nothing
-            | otherwise = Just "Results differ!\n"
-
-        outputDiff :: Maybe String
-        outputDiff
-            | seqOutput == parOutput = Nothing
-            | otherwise = Just . mconcat $
-                [ "Outputs differ!\n"
-                , "Expected:\n\"", T.unpack seqOutput, "\"\n\n"
-                , "Got:\n\"", T.unpack parOutput, "\"\n"
-                ]
-
-    rewindAndRead :: Handle -> IO Text
-    rewindAndRead hnd = do
-        hSeek hnd AbsoluteSeek 0
-        T.hGetContents hnd
-
-    seqTest :: IO (r, Text)
-    seqTest = withSystemTempFile "seq.out" $ \_ hndl ->
-        (,) <$> seqSink inputs (doPrint hndl) <*> rewindAndRead hndl
-
-    parTest :: IO (r, Text)
-    parTest = withSystemTempFile "par.out" $ \_ hndl ->
-        (,) <$> parSink inputs (doPrint hndl) threads <*> rewindAndRead hndl
+    parTest :: Handle -> IO r
+    parTest hndl = parSink inputs (doPrint hndl) threads
 
 newtype SlowTests = SlowTests Bool
   deriving (Eq, Ord, Typeable)
