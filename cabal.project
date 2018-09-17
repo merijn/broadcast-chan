@@ -7,3 +7,6 @@ documentation: True
 
 program-options
   haddock-options: --quickjump
+
+package fail
+  documentation: False
