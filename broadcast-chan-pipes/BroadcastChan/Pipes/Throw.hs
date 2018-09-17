@@ -8,15 +8,32 @@
 -- Stability   :  experimental
 -- Portability :  haha
 --
--- This module is identical to "BroadcastChan.Throw", but replaces
--- @BroadcastChan.Throw.@'BroadcastChan.Throw.parMapM_' with 'parMapM' and
--- 'parMapM_' which create a parallel processing producer and effect,
--- respectively.
+-- This module is identical to "BroadcastChan.Throw", but replaces the parallel
+-- processing operations with functions for creating producers and effects that
+-- process in parallel.
 -------------------------------------------------------------------------------
 module BroadcastChan.Pipes.Throw
-    ( parMapM
+    ( Action(..)
+    , Handler(..)
+    , parMapM
     , parMapM_
-    , module BroadcastChan.Throw
+    -- * Re-exports from "BroadcastChan.Throw"
+    -- ** Datatypes
+    , BroadcastChan
+    , Direction(..)
+    , In
+    , Out
+    -- ** Construction
+    , newBroadcastChan
+    , newBChanListener
+    -- ** Basic Operations
+    , closeBChan
+    , isClosedBChan
+    , getBChanContents
+    -- ** Foldl combinators
+    -- | Combinators for use with Tekmo's @foldl@ package.
+    , foldBChan
+    , foldBChanM
     ) where
 
 import BroadcastChan.Throw hiding (parMapM_)

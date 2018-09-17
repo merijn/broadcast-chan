@@ -20,7 +20,28 @@ module BroadcastChan.Throw
     , readBChan
     , writeBChan
     -- * Re-exports from "BroadcastChan"
-    , module BroadcastChan
+    -- ** Datatypes
+    , BroadcastChan
+    , Direction(..)
+    , In
+    , Out
+    -- ** Construction
+    , newBroadcastChan
+    , newBChanListener
+    -- ** Basic Operations
+    , closeBChan
+    , isClosedBChan
+    , getBChanContents
+    -- ** Parallel processing
+    , Action(..)
+    , Handler(..)
+    , parMapM_
+    , parFoldMap
+    , parFoldMapM
+    -- ** Foldl combinators
+    -- | Combinators for use with Tekmo's @foldl@ package.
+    , foldBChan
+    , foldBChanM
     ) where
 
 import Control.Monad (when)
