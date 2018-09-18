@@ -3,12 +3,13 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module BroadcastChan.Conduit.Internal (parMapM, parMapM_) where
 
+import Control.Monad ((>=>))
 import Control.Monad.Trans.Resource (MonadResource)
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.IO.Unlift (MonadUnliftIO(askUnliftIO), UnliftIO(..))
 import Data.Acquire
     (ReleaseType(ReleaseException), allocateAcquire, mkAcquireType)
 import Data.Conduit
-import Control.Monad.Trans.Class (lift)
-import Control.Monad.IO.Unlift (MonadUnliftIO(askUnliftIO), UnliftIO(..))
 import qualified Data.Conduit.List as C
 import Data.Void (Void)
 
@@ -47,10 +48,10 @@ parMapM hnd threads workFun = do
 
     bracketOnError allocate cleanup action
   where
-    body :: Monad m => (a -> m ()) -> (a -> m b) -> ConduitM a b m ()
+    body :: Monad m => (a -> m ()) -> (a -> m (Maybe b)) -> ConduitM a b m ()
     body buffer process = do
         C.isolate threads .| C.mapM_ buffer
-        C.mapM process
+        awaitForever $ lift . process >=> mapM_ yield
 
 -- | Create a conduit sink that consumes inputs in parallel.
 --

@@ -109,9 +109,10 @@ parallelCore
      . MonadIO m
     => Handler IO a
     -> Int
+    -> IO ()
     -> (a -> IO ())
     -> m (IO [Weak ThreadId], [Weak ThreadId] -> IO (), a -> IO (), m ())
-parallelCore hndl threads f = liftIO $ do
+parallelCore hndl threads onDrop f = liftIO $ do
     originTid <- myThreadId
     inChanIn <- newBroadcastChan
     inChanOut <- newBChanListener inChanIn
@@ -123,7 +124,7 @@ parallelCore hndl threads f = liftIO $ do
 
         simpleHandler :: a -> SomeException -> Action -> IO ()
         simpleHandler val exc act = case act of
-            Drop -> return ()
+            Drop -> onDrop
             Retry -> unsafeWriteBChan inChanIn val
             Terminate -> Exc.throwIO exc
 
@@ -211,7 +212,7 @@ runParallel
     -- ^ Number of threads to use
     -> (a -> IO b)
     -- ^ Function to run in parallel
-    -> ((a -> m ()) -> (a -> m b) -> n r)
+    -> ((a -> m ()) -> (a -> m (Maybe b)) -> n r)
     -- ^ \"Stream\" processing function
     -> n (BracketOnError n r)
 runParallel yielder hndl threads work pipe = do
@@ -219,11 +220,15 @@ runParallel yielder hndl threads work pipe = do
     outChanOut <- newBChanListener outChanIn
 
     let process :: MonadIO f => a -> f ()
-        process = liftIO . (work >=> void . writeBChan outChanIn)
+        process = liftIO . (work >=> void . writeBChan outChanIn . Just)
 
-    (allocate, cleanup, bufferValue, wait) <- parallelCore hndl threads process
+        notifyDrop :: IO ()
+        notifyDrop = void $ writeBChan outChanIn Nothing
 
-    let queueAndYield :: a -> m b
+    (allocate, cleanup, bufferValue, wait) <-
+        parallelCore hndl threads notifyDrop process
+
+    let queueAndYield :: a -> m (Maybe b)
         queueAndYield x = do
             Just v <- liftIO $ readBChan outChanOut <* bufferValue x
             return v
@@ -233,7 +238,8 @@ runParallel yielder hndl threads work pipe = do
             next <- readBChan outChanOut
             case next of
                 Nothing -> return r
-                Just v -> foldFun r v >>= finish
+                Just Nothing -> finish r
+                Just (Just v) -> foldFun r v >>= finish
 
         action :: n r
         action = do
@@ -278,7 +284,8 @@ runParallel_ hndl threads workFun processElems = do
 
     let process x = signalQSem sem >> workFun x
 
-    (allocate, cleanup, bufferValue, wait) <- parallelCore hndl threads process
+    (allocate, cleanup, bufferValue, wait) <-
+        parallelCore hndl threads (return ()) process
 
     let action = do
             result <- processElems $ \v -> liftIO $ do

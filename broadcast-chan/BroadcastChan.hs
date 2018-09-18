@@ -180,10 +180,10 @@ parFoldMapM hndl threads workFun f z input = do
 
     bracketOnError allocate cleanup action
   where
-    body :: (a -> m ()) -> (a -> m b) -> m r
+    body :: (a -> m ()) -> (a -> m (Maybe b)) -> m r
     body send sendRecv = snd `liftM` foldlM wrappedFoldFun (0, z) input
       where
         wrappedFoldFun :: (Int, r) -> a -> m (Int, r)
         wrappedFoldFun (i, x) a
-            | i == threads = liftM (i,) $ sendRecv a >>= f x
+            | i == threads = liftM (i,) $ sendRecv a >>= maybe (return x) (f x)
             | otherwise = const (i+1, x) `liftM` send a

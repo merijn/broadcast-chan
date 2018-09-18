@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module BroadcastChan.Pipes.Internal (parMapM, parMapM_) where
 
-import Control.Monad (replicateM)
+import Control.Monad ((>=>), replicateM)
 import Pipes
 import qualified Pipes.Prelude as P
 import Pipes.Safe (MonadSafe)
@@ -36,13 +36,13 @@ parMapM hndl i f prod = do
     Bracket{allocate,cleanup,action} <- runParallel (Left yield) hndl i f body
     bracketOnError allocate cleanup action
   where
-    body :: (a -> m ()) -> (a -> m b) -> Producer b m ()
+    body :: (a -> m ()) -> (a -> m (Maybe b)) -> Producer b m ()
     body buffer process = prod >-> work
       where
         work :: Pipe a b m ()
         work = do
             replicateM i (await >>= lift . buffer)
-            P.mapM process
+            for cat $ lift . process >=> mapM_ yield
 
 -- | Create an Effect that processes its inputs in parallel.
 --
