@@ -34,8 +34,9 @@ import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (wait, withAsync)
 import Control.Concurrent.MVar
 import Control.Concurrent.STM
+import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO(liftIO))
-import Control.Exception (Exception, try)
+import Control.Exception (Exception, throwIO, try)
 import Data.Bifunctor (second)
 import Data.List (sort)
 import Data.Map (Map)
@@ -222,6 +223,26 @@ outputTest seqSink parSink threads inputs label =
     parTest :: Handle -> IO r
     parTest hndl = parSink inputs (doPrint hndl) threads
 
+data TestException = TestException deriving (Eq, Show, Typeable)
+instance Exception TestException
+
+exceptionTests
+    :: (Eq r, Show r)
+    => ([Int] -> (Int -> IO Int) -> IO r)
+    -> (Handler IO Int -> [Int] -> (Int -> IO Int) -> Int -> IO r)
+    -> TestTree
+exceptionTests _seqImpl parImpl = testGroup "exceptions" $
+    [ testCase "termination" . expect TestException . void $
+        withSystemTempFile "terminate.out" $ \_ hndl ->
+            parImpl (Simple Terminate) inputs (dropEven hndl) 4
+    ]
+  where
+    inputs = [1..100]
+
+    dropEven hnd n
+      | even n = throwIO TestException
+      | otherwise = doPrint hnd n
+
 newtype SlowTests = SlowTests Bool
   deriving (Eq, Ord, Typeable)
 
@@ -258,7 +279,7 @@ genStreamTests
 genStreamTests name f g = askOption $ \(SlowTests slow) ->
     withResource (newTVarIO M.empty) (const $ return ()) $ \getCache ->
     let
-        testTree = growTree (Just "/") testGroup
+        testTree = growTree (Just ".") testGroup
         params
           | slow = simpleParam "threads" [1,2,5]
                  . derivedParam (enumFromTo 0) "inputs" [600]
@@ -269,6 +290,7 @@ genStreamTests name f g = askOption $ \(SlowTests slow) ->
     in testGroup name
         [ testTree "output" (outputTest f (g term)) params
         , testTree "speedup" (speedupTest getCache f (g term)) $ params . pause
+        , exceptionTests f g
         ]
   where
     term = Simple Terminate

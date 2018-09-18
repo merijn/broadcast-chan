@@ -32,13 +32,12 @@ module BroadcastChan.Extra
 #if !MIN_VERSION_base(4,8,0)
 import Control.Applicative ((<*))
 #endif
-import Control.Concurrent
-    (ThreadId, forkFinally, killThread, mkWeakThreadId, myThreadId)
+import Control.Concurrent (ThreadId, forkFinally, mkWeakThreadId, myThreadId)
 import Control.Concurrent.MVar
 import Control.Concurrent.QSem
 import Control.Concurrent.QSemN
-import Control.Exception
-    (Exception(..), SomeException(..), catch, mask_, throwIO, throwTo)
+import Control.Exception (Exception(..), SomeException(..))
+import qualified Control.Exception as Exc
 import Control.Monad ((>=>), replicateM, void)
 import Control.Monad.IO.Unlift (MonadIO(..))
 import Data.Typeable (Typeable)
@@ -51,7 +50,7 @@ import BroadcastChan.Internal
 unsafeWriteBChan :: MonadIO m => BroadcastChan In a -> a -> m ()
 unsafeWriteBChan (BChan writeVar) val = liftIO $ do
   new_hole <- newEmptyMVar
-  mask_ $ do
+  Exc.mask_ $ do
     old_hole <- takeMVar writeVar
     -- old_hole is only full if the channel was previously closed
     item <- tryTakeMVar old_hole
@@ -126,12 +125,10 @@ parallelCore hndl threads f = liftIO $ do
         simpleHandler val exc act = case act of
             Drop -> return ()
             Retry -> unsafeWriteBChan inChanIn val
-            Terminate -> do
-                throwTo originTid exc
-                myThreadId >>= killThread
+            Terminate -> Exc.throwIO exc
 
         handler :: a -> SomeException -> IO ()
-        handler _ exc | Just Shutdown <- fromException exc = throwIO exc
+        handler _ exc | Just Shutdown <- fromException exc = Exc.throwIO exc
         handler val exc = case hndl of
             Simple a -> simpleHandler val exc a
             Handle h -> h val exc >>= simpleHandler val exc
@@ -142,17 +139,26 @@ parallelCore hndl threads f = liftIO $ do
             case x of
                 Nothing -> signalQSemN endSem 1
                 Just a -> do
-                    f a `catch` handler a
+                    f a `Exc.catch` handler a
                     processInput
 
         allocate :: IO [Weak ThreadId]
         allocate = liftIO $ do
-            tids <- replicateM threads $
-                forkFinally processInput (\_ -> signalQSemN shutdownSem 1)
+            tids <- replicateM threads . forkFinally processInput $ \exit -> do
+                signalQSemN shutdownSem 1
+                case exit of
+                    Left exc
+                      | Just Shutdown <- fromException exc -> return ()
+                      | otherwise ->
+                          Exc.throwTo originTid exc `Exc.catch` shutdownHandler
+                    Right () -> return ()
+
             mapM mkWeakThreadId tids
+          where
+            shutdownHandler Shutdown = return ()
 
         cleanup :: [Weak ThreadId] -> IO ()
-        cleanup threadIds = liftIO $ do
+        cleanup threadIds = liftIO . Exc.uninterruptibleMask_ $ do
             mapM_ killWeakThread threadIds
             waitQSemN shutdownSem threads
 
@@ -168,7 +174,7 @@ parallelCore hndl threads f = liftIO $ do
         tid <- deRefWeak wTid
         case tid of
             Nothing -> return ()
-            Just t -> throwTo t Shutdown
+            Just t -> Exc.throwTo t Shutdown
 
 -- | Sets up parallel processing.
 --
@@ -231,7 +237,7 @@ runParallel yielder hndl threads work pipe = do
 
         action :: n r
         action = do
-            result <- pipe process queueAndYield
+            result <- pipe (liftIO . bufferValue) queueAndYield
             wait
             closeBChan outChanIn
             finish result
