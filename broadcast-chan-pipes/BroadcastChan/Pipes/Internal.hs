@@ -4,6 +4,7 @@
 module BroadcastChan.Pipes.Internal (parMapM, parMapM_) where
 
 import Control.Monad ((>=>), replicateM)
+import Data.Foldable (traverse_)
 import Pipes
 import qualified Pipes.Prelude as P
 import Pipes.Safe (MonadSafe)
@@ -42,7 +43,7 @@ parMapM hndl i f prod = do
         work :: Pipe a b m ()
         work = do
             replicateM i (await >>= lift . buffer)
-            for cat $ lift . process >=> mapM_ yield
+            for cat $ lift . process >=> traverse_ yield
 
 -- | Create an Effect that processes its inputs in parallel.
 --

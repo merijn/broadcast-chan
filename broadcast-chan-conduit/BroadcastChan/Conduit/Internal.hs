@@ -11,6 +11,7 @@ import Data.Acquire
     (ReleaseType(ReleaseException), allocateAcquire, mkAcquireType)
 import Data.Conduit
 import qualified Data.Conduit.List as C
+import Data.Foldable (traverse_)
 import Data.Void (Void)
 
 import BroadcastChan.Extra
@@ -51,7 +52,7 @@ parMapM hnd threads workFun = do
     body :: Monad m => (a -> m ()) -> (a -> m (Maybe b)) -> ConduitM a b m ()
     body buffer process = do
         C.isolate threads .| C.mapM_ buffer
-        awaitForever $ lift . process >=> mapM_ yield
+        awaitForever $ lift . process >=> traverse_ yield
 
 -- | Create a conduit sink that consumes inputs in parallel.
 --
