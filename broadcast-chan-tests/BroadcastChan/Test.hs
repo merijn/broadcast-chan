@@ -284,16 +284,17 @@ genStreamTests name f g = askOption $ \(SlowTests slow) ->
     withResource (newTVarIO M.empty) (const $ return ()) $ \getCache ->
     let
         testTree = growTree (Just ".") testGroup
-        params
-          | slow = simpleParam "threads" [1,2,5]
-                 . derivedParam (enumFromTo 0) "inputs" [600]
-          | otherwise = simpleParam "threads" [1,2,5]
-                      . derivedParam (enumFromTo 0) "inputs" [300]
+        threads = simpleParam "threads" [1,2,5]
+        bigInputs | slow = derivedParam (enumFromTo 0) "inputs" [600]
+                  | otherwise = derivedParam (enumFromTo 0) "inputs" [300]
+        smallInputs = derivedParam (enumFromTo 0) "inputs" [0,1,2]
         pause = simpleParam "pause" [10^(5 :: Int)]
 
     in testGroup name
-        [ testTree "output" (outputTest f (g term)) params
-        , testTree "speedup" (speedupTest getCache f (g term)) $ params . pause
+        [ testTree "output" (outputTest f (g term)) $
+            threads . paramSets [ smallInputs, bigInputs ]
+        , testTree "speedup" (speedupTest getCache f (g term)) $
+            threads . bigInputs . pause
         , exceptionTests f g
         ]
   where
