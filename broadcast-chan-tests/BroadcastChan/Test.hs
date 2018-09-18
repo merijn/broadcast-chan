@@ -231,13 +231,17 @@ exceptionTests
     => ([Int] -> (Int -> IO Int) -> IO r)
     -> (Handler IO Int -> [Int] -> (Int -> IO Int) -> Int -> IO r)
     -> TestTree
-exceptionTests _seqImpl parImpl = testGroup "exceptions" $
-    [ testCase "termination" . expect TestException . void $
+exceptionTests seqImpl parImpl = testGroup "exceptions" $
+    [ nonDeterministicGolden "drop"
+        (seqImpl filteredInputs . doPrint)
+        (\hnd -> parImpl (Simple Drop) inputs (dropEven hnd) 2)
+    , testCase "termination" . expect TestException . void $
         withSystemTempFile "terminate.out" $ \_ hndl ->
             parImpl (Simple Terminate) inputs (dropEven hndl) 4
     ]
   where
     inputs = [1..100]
+    filteredInputs = filter (not . even) inputs
 
     dropEven hnd n
       | even n = throwIO TestException
