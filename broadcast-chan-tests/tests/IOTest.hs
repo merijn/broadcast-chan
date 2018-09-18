@@ -16,9 +16,10 @@ import BroadcastChan.Test
 sequentialSink :: Foldable f => f a -> (a -> IO b) -> IO ()
 sequentialSink set f = forM_ set (void . f)
 
-parallelSink :: Foldable f => f a -> (a -> IO b) -> Int -> IO ()
-parallelSink input f n =
-  parMapM_ (Simple Terminate) n (void . f) input
+parallelSink
+    :: Foldable f => Handler IO a -> f a -> (a -> IO b) -> Int -> IO ()
+parallelSink hnd input f n =
+  parMapM_ hnd n (void . f) input
 
 sequentialFold :: (Foldable f, Ord b) => f a -> (a -> IO b) -> IO (Set b)
 sequentialFold input f = foldlM foldFun S.empty input
@@ -26,17 +27,19 @@ sequentialFold input f = foldlM foldFun S.empty input
     foldFun bs a = (\b -> S.insert b bs) <$> f a
 
 parallelFold
-    :: (Foldable f, Ord b) => f a -> (a -> IO b) -> Int -> IO (Set b)
-parallelFold input f n =
-  parFoldMap (Simple Terminate) n f foldFun S.empty input
+    :: (Foldable f, Ord b)
+    => Handler IO a -> f a -> (a -> IO b) -> Int -> IO (Set b)
+parallelFold hnd input f n =
+  parFoldMap hnd n f foldFun S.empty input
   where
     foldFun :: Ord b => Set b -> b -> Set b
     foldFun s b = S.insert b s
 
 parallelFoldM
-    :: (Foldable f, Ord b) => f a -> (a -> IO b) -> Int -> IO (Set b)
-parallelFoldM input f n =
-    parFoldMapM (Simple Terminate) n f foldFun S.empty input
+    :: (Foldable f, Ord b)
+    => Handler IO a -> f a -> (a -> IO b) -> Int -> IO (Set b)
+parallelFoldM hnd input f n =
+    parFoldMapM hnd n f foldFun S.empty input
   where
     foldFun :: (Ord b, Monad m) => Set b -> b -> m (Set b)
     foldFun !z b = return $ S.insert b z

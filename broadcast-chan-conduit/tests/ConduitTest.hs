@@ -11,19 +11,24 @@ sequentialSink :: [a] -> (a -> IO b) -> IO ()
 sequentialSink inputs f =
   runConduitRes $ C.sourceList inputs .| C.mapM_ (liftIO . void . f)
 
-parallelSink :: [a] -> (a -> IO b) -> Int -> IO ()
-parallelSink inputs f n = runConduitRes $
-    C.sourceList inputs .| parMapM_ (Simple Terminate) n (liftIO . void . f)
+parallelSink :: Handler IO a -> [a] -> (a -> IO b) -> Int -> IO ()
+parallelSink hnd inputs f n = runConduitRes $
+    C.sourceList inputs .| parMapM_ handler n (liftIO . void . f)
+  where
+    handler = mapHandler liftIO hnd
 
 sequentialFold :: Ord b => [a] -> (a -> IO b) -> IO (Set b)
 sequentialFold inputs f = runConduitRes $
     C.sourceList inputs .| C.mapM (liftIO . f) .| C.foldMap S.singleton
 
-parallelFold :: Ord b => [a] -> (a -> IO b) -> Int -> IO (Set b)
-parallelFold inputs f n = runConduitRes $
+parallelFold
+    :: Ord b => Handler IO a -> [a] -> (a -> IO b) -> Int -> IO (Set b)
+parallelFold hnd inputs f n = runConduitRes $
     C.sourceList inputs
-        .| parMapM (Simple Terminate) n (liftIO . f)
+        .| parMapM handler n (liftIO . f)
         .| C.foldMap S.singleton
+  where
+    handler = mapHandler liftIO hnd
 
 main :: IO ()
 main = runTests "conduit" $

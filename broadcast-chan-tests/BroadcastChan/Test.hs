@@ -21,6 +21,7 @@ module BroadcastChan.Test
     , genStreamTests
     , runTests
     , MonadIO(..)
+    , mapHandler
     -- * Re-exports of @tasty@ and @tasty-hunit@
     , module Test.Tasty
     , module Test.Tasty.HUnit
@@ -63,6 +64,7 @@ import qualified Test.Tasty.HUnit as HUnit
 import Test.Tasty.Options
 import Test.Tasty.Travis
 
+import BroadcastChan.Extra (Action(..), Handler(..), mapHandler)
 import ParamTree
 
 infix 0 @?
@@ -250,7 +252,8 @@ genStreamTests
     :: (Eq r, Show r)
     => String -- ^ Name to group tests under
     -> ([Int] -> (Int -> IO Int) -> IO r) -- ^ Sequential sink
-    -> ([Int] -> (Int -> IO Int) -> Int -> IO r) -- ^ Parallel sink
+    -> (Handler IO Int -> [Int] -> (Int -> IO Int) -> Int -> IO r)
+    -- ^ Parallel sink
     -> TestTree
 genStreamTests name f g = askOption $ \(SlowTests slow) ->
     withResource (newTVarIO M.empty) (const $ return ()) $ \getCache ->
@@ -264,9 +267,11 @@ genStreamTests name f g = askOption $ \(SlowTests slow) ->
         pause = simpleParam "pause" [10^(5 :: Int)]
 
     in testGroup name
-        [ testTree "output" (outputTest f g) params
-        , testTree "speedup" (speedupTest getCache f g) $ params . pause
+        [ testTree "output" (outputTest f (g term)) params
+        , testTree "speedup" (speedupTest getCache f (g term)) $ params . pause
         ]
+  where
+    term = Simple Terminate
 
 -- | Run a list of 'TestTree''s and group them under the specified name.
 runTests :: String -> [TestTree] -> IO ()
