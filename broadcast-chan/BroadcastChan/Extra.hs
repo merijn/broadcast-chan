@@ -224,22 +224,17 @@ runParallel yielder hndl threads work pipe = do
 
         finish :: r -> n r
         finish r = do
-            wait
-            closeBChan outChanIn
             next <- readBChan outChanOut
             case next of
                 Nothing -> return r
-                Just v -> go v r
-          where
-            go :: b -> r -> n r
-            go b z = do
-                result <- readBChan outChanOut
-                case result of
-                    Nothing -> foldFun z b
-                    Just x -> foldFun z b >>= go x
+                Just v -> foldFun r v >>= finish
 
         action :: n r
-        action = pipe process queueAndYield >>= finish
+        action = do
+            result <- pipe process queueAndYield
+            wait
+            closeBChan outChanIn
+            finish result
 
     return Bracket{allocate,cleanup,action}
   where
