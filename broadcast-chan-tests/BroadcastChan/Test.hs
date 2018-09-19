@@ -16,8 +16,6 @@
 module BroadcastChan.Test
     ( (@?)
     , expect
-    , doNothing
-    , doPrint
     , genStreamTests
     , runTests
     , MonadIO(..)
@@ -27,6 +25,7 @@ module BroadcastChan.Test
     , module Test.Tasty.HUnit
     ) where
 
+import Prelude hiding (seq)
 #if !MIN_VERSION_base(4,8,0)
 import Control.Applicative ((<$>),(<*>))
 #endif
@@ -34,10 +33,12 @@ import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (wait, withAsync)
 import Control.Concurrent.MVar
 import Control.Concurrent.STM
-import Control.Monad (void)
+import Control.Monad (void, when)
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Control.Exception (Exception, throwIO, try)
 import Data.Bifunctor (second)
+import Data.IntSet (IntSet)
+import qualified Data.IntSet as IS
 import Data.List (sort)
 import Data.Map (Map)
 import qualified Data.Map as M
@@ -68,6 +69,9 @@ import Test.Tasty.Travis
 import BroadcastChan.Extra (Action(..), Handler(..), mapHandler)
 import ParamTree
 
+data TestException = TestException deriving (Eq, Show, Typeable)
+instance Exception TestException
+
 infix 0 @?
 -- | Monomorphised version of 'Test.Tasty.HUnit.@?' to avoid ambiguous type
 -- errors when combined with predicates that are @MonadIO m => m Bool@.
@@ -96,6 +100,11 @@ doPrint :: Show a => Handle -> a -> IO a
 doPrint hnd x = do
     hPrint hnd x
     return x
+
+doDrop :: Show a => (a -> Bool) -> Handle -> a -> IO a
+doDrop predicate hnd val
+    | predicate val = throwIO TestException
+    | otherwise = doPrint hnd val
 
 fromTimeSpec :: Fractional n => TimeSpec -> n
 fromTimeSpec = fromIntegral . toNanoSecs
@@ -223,29 +232,59 @@ outputTest seqSink parSink threads inputs label =
     parTest :: Handle -> IO r
     parTest hndl = parSink inputs (doPrint hndl) threads
 
-data TestException = TestException deriving (Eq, Show, Typeable)
-instance Exception TestException
-
-exceptionTests
+dropTest
     :: (Eq r, Show r)
     => ([Int] -> (Int -> IO Int) -> IO r)
     -> (Handler IO Int -> [Int] -> (Int -> IO Int) -> Int -> IO r)
     -> TestTree
-exceptionTests seqImpl parImpl = testGroup "exceptions" $
-    [ nonDeterministicGolden "drop"
-        (seqImpl filteredInputs . doPrint)
-        (\hnd -> parImpl (Simple Drop) inputs (dropEven hnd) 2)
-    , testCase "termination" . expect TestException . void $
-        withSystemTempFile "terminate.out" $ \_ hndl ->
-            parImpl (Simple Terminate) inputs (dropEven hndl) 4
-    ]
+dropTest seqImpl parImpl = nonDeterministicGolden "drop"
+    (seqImpl filteredInputs . doPrint)
+    (\hnd -> parImpl (Simple Drop) inputs (doDrop even hnd) 2)
   where
     inputs = [1..100]
     filteredInputs = filter (not . even) inputs
 
-    dropEven hnd n
-      | even n = throwIO TestException
-      | otherwise = doPrint hnd n
+terminationTest
+    :: (Handler IO Int -> [Int] -> (Int -> IO Int) -> Int -> IO r) -> TestTree
+terminationTest parImpl = testCase "termination" $
+    expect TestException . void $
+        withSystemTempFile "terminate.out" $ \_ hndl ->
+            parImpl (Simple Terminate) [1..100] (doDrop even hndl) 4
+
+retryTest
+    :: (Eq r, Show r)
+    => ([Int] -> (Int -> IO Int) -> IO r)
+    -> (Handler IO Int -> [Int] -> (Int -> IO Int) -> Int -> IO r)
+    -> TestTree
+retryTest seqImpl parImpl = withRetryCheck $ \getRetryCheck ->
+  nonDeterministicGolden
+    "retry"
+    (seqImpl seqInputs . doPrint)
+    (\h -> parImpl (Simple Retry) parInputs (dropAfterPrint getRetryCheck h) 4)
+  where
+    withRetryCheck = withResource alloc clean
+      where
+        alloc = updateRetry <$> newMVar IS.empty
+        clean _ = return ()
+
+    parInputs = [1..100]
+    seqInputs = parInputs ++ filter even parInputs
+
+    updateRetry :: MVar IntSet -> Int -> IO Bool
+    updateRetry mvar val = modifyMVar mvar updateSet
+      where
+        updateSet :: IntSet -> IO (IntSet, Bool)
+        updateSet set
+          | IS.member val set = return (set, False)
+          | otherwise = return (IS.insert val set, True)
+
+    dropAfterPrint :: IO (Int -> IO Bool) -> Handle -> Int -> IO Int
+    dropAfterPrint checkPresence hnd val = do
+        hPrint hnd val
+        when (even val) $ do
+            isNotPresent <- checkPresence >>= ($val)
+            when isNotPresent $ throwIO TestException
+        return val
 
 newtype SlowTests = SlowTests Bool
   deriving (Eq, Ord, Typeable)
@@ -280,7 +319,7 @@ genStreamTests
     -> (Handler IO Int -> [Int] -> (Int -> IO Int) -> Int -> IO r)
     -- ^ Parallel sink
     -> TestTree
-genStreamTests name f g = askOption $ \(SlowTests slow) ->
+genStreamTests name seq par = askOption $ \(SlowTests slow) ->
     withResource (newTVarIO M.empty) (const $ return ()) $ \getCache ->
     let
         testTree = growTree (Just ".") testGroup
@@ -291,11 +330,12 @@ genStreamTests name f g = askOption $ \(SlowTests slow) ->
         pause = simpleParam "pause" [10^(5 :: Int)]
 
     in testGroup name
-        [ testTree "output" (outputTest f (g term)) $
+        [ testTree "output" (outputTest seq (par term)) $
             threads . paramSets [ smallInputs, bigInputs ]
-        , testTree "speedup" (speedupTest getCache f (g term)) $
+        , testTree "speedup" (speedupTest getCache seq (par term)) $
             threads . bigInputs . pause
-        , exceptionTests f g
+        , testGroup "exceptions"
+            [ dropTest seq par, terminationTest par, retryTest seq par ]
         ]
   where
     term = Simple Terminate
