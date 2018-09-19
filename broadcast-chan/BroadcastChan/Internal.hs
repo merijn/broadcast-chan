@@ -130,7 +130,7 @@ newBChanListener (BChan writeVar) = liftIO $ do
    newReadVar <- newMVar hole
    return (BChan newReadVar)
 
--- | Strict fold of the 'BroadcastChan''s elements. Can be used with
+-- | Strict fold of the 'BroadcastChan''s messages. Can be used with
 -- "Control.Foldl" from Tekmo's foldl package:
 --
 -- > Control.Foldl.purely foldBChan :: MonadIO m => Fold a b -> BroadcastChan In a -> m (m b)
@@ -152,7 +152,7 @@ foldBChan step begin done chan = do
             Nothing -> return $! done x
 {-# INLINABLE foldBChan #-}
 
--- | Strict, monadic fold of the 'BroadcastChan''s elements. Can be used with
+-- | Strict, monadic fold of the 'BroadcastChan''s messages. Can be used with
 -- "Control.Foldl" from Tekmo's foldl package:
 --
 -- > Control.Foldl.impurely foldBChanM :: MonadIO m => FoldM m a b -> BroadcastChan In a -> m (m b)

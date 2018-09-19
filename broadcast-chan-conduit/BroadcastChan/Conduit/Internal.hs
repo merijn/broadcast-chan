@@ -26,7 +26,7 @@ bracketOnError alloc clean work =
 
 -- | Create a conduit that processes inputs in parallel.
 --
--- This function does *NOT* guarantee that input elements are processed or
+-- This function does __NOT__ guarantee that input elements are processed or
 -- output in a deterministic order!
 parMapM
     :: (MonadResource m, MonadUnliftIO m)
@@ -56,7 +56,7 @@ parMapM hnd threads workFun = do
 
 -- | Create a conduit sink that consumes inputs in parallel.
 --
--- This function does *NOT* guarantee that input elements are processed or
+-- This function does __NOT__ guarantee that input elements are processed or
 -- output in a deterministic order!
 parMapM_
     :: (MonadResource m, MonadUnliftIO m)

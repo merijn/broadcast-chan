@@ -101,7 +101,7 @@ bracketOnError before after thing = withRunInIO $ \run -> mask $ \restore -> do
 
 -- | Map a monadic function over a 'Foldable', processing elements in parallel.
 --
--- This function does *NOT* guarantee that elements are processed in a
+-- This function does __NOT__ guarantee that elements are processed in a
 -- deterministic order!
 parMapM_
     :: (F.Foldable f, MonadUnliftIO m)
@@ -128,7 +128,7 @@ parMapM_ hndl threads workFun input = do
 -- | Like 'parMapM_', but folds the individual results into single result
 -- value.
 --
--- This function does *NOT* guarantee that elements are processed in a
+-- This function does __NOT__ guarantee that elements are processed in a
 -- deterministic order!
 parFoldMap
     :: (F.Foldable f, MonadUnliftIO m)
@@ -150,7 +150,7 @@ parFoldMap hndl threads work f =
 
 -- | Like 'parFoldMap', but uses a monadic fold function.
 --
--- This function does *NOT* guarantee that elements are processed in a
+-- This function does __NOT__ guarantee that elements are processed in a
 -- deterministic order!
 parFoldMapM
     :: forall a b f m r

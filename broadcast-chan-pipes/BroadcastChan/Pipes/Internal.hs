@@ -19,7 +19,7 @@ bracketOnError alloc clean =
 
 -- | Create a producer that processes its inputs in parallel.
 --
--- This function does *NOT* guarantee that input elements are processed or
+-- This function does __NOT__ guarantee that input elements are processed or
 -- output in a deterministic order!
 parMapM
     :: forall a b m
@@ -47,7 +47,7 @@ parMapM hndl i f prod = do
 
 -- | Create an Effect that processes its inputs in parallel.
 --
--- This function does *NOT* guarantee that input elements are processed or
+-- This function does __NOT__ guarantee that input elements are processed or
 -- output in a deterministic order!
 parMapM_
     :: MonadSafe m
