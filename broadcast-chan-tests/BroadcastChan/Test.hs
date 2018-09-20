@@ -18,6 +18,7 @@ module BroadcastChan.Test
     , expect
     , genStreamTests
     , runTests
+    , withLoggedOutput
     , MonadIO(..)
     , mapHandler
     -- * Re-exports of @tasty@ and @tasty-hunit@
@@ -168,6 +169,15 @@ speedupTest getCache seqSink parSink n inputs pause name = testCase name $ do
                 timed (seqSink inputs testFun) >>= putMVar mvar
                 readMVar mvar
 
+withLoggedOutput :: FilePath -> (Handle -> IO r) -> IO (r, Text)
+withLoggedOutput filename act = withSystemTempFile filename $ \_ hnd ->
+  (,) <$> act hnd <*> rewindAndRead hnd
+  where
+    rewindAndRead :: Handle -> IO Text
+    rewindAndRead hnd = do
+        hSeek hnd AbsoluteSeek 0
+        T.hGetContents hnd
+
 nonDeterministicGolden
     :: forall r
      . (Eq r, Show r)
@@ -181,18 +191,11 @@ nonDeterministicGolden label controlAction testAction =
     normalise :: MonadIO m => IO (a, Text) -> m (a, Text)
     normalise = liftIO . fmap (second (T.strip . T.unlines . sort . T.lines))
 
-    rewindAndRead :: Handle -> IO Text
-    rewindAndRead hnd = do
-        hSeek hnd AbsoluteSeek 0
-        T.hGetContents hnd
-
     control :: IO (r, Text)
-    control = withSystemTempFile "control.out" $ \_ hndl ->
-        (,) <$> controlAction hndl <*> rewindAndRead hndl
+    control = withLoggedOutput "control.out" controlAction
 
     test :: IO (r, Text)
-    test = withSystemTempFile "test.out" $ \_ hndl ->
-        (,) <$> testAction hndl <*> rewindAndRead hndl
+    test = withLoggedOutput "test.out" testAction
 
     diff :: (r, Text) -> (r, Text) -> IO (Maybe String)
     diff (controlResult, controlOutput) (testResult, testOutput) =

@@ -50,7 +50,7 @@ Test-Suite pipes
                ,        broadcast-chan-pipes
                ,        broadcast-chan-tests
                ,        containers >= 0.4 && < 0.6
-               ,        foldl >= 1.0.4 && < 1.4
+               ,        foldl >= 1.0.4 && < 1.5
                ,        pipes >= 4.1.6 && < 4.4
                ,        pipes-safe == 2.2.*
 

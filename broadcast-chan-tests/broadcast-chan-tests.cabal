@@ -67,6 +67,7 @@ Test-Suite basic
   Build-Depends:        base
                ,        broadcast-chan
                ,        broadcast-chan-tests
+               ,        foldl >= 1.4 && < 1.5
                ,        monad-loops >= 0.4.3 && < 0.5
                ,        random >= 1.1 && < 1.2
 
@@ -79,6 +80,7 @@ Test-Suite basic-unthreaded
   Build-Depends:        base
                ,        broadcast-chan
                ,        broadcast-chan-tests
+               ,        foldl >= 1.4 && < 1.5
                ,        monad-loops >= 0.4.3 && < 0.5
                ,        random >= 1.1 && < 1.2
 

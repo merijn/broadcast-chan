@@ -2,9 +2,11 @@
 #if !MIN_VERSION_base(4,8,0)
 import Control.Applicative ((<$>))
 #endif
+import Control.Foldl (Fold, FoldM, generalize, impurely, list, premapM, purely)
 import Control.Monad (forM_)
 import Control.Monad.Loops (unfoldM)
 import Data.Maybe (isNothing)
+import System.IO (Handle, hPrint)
 import System.Random (getStdGen, randomIO, randoms)
 import System.Timeout (timeout)
 
@@ -217,10 +219,59 @@ chanContentsTests = testGroup "getBChanContents"
                 Nothing -> assertFailure "Element missing!"
                 Just v -> assertEqual "Should be equal" val v
 
+foldlTests :: TestTree
+foldlTests = testGroup "foldl tests"
+    [ foldBChanIn
+    , foldBChanMIn
+    ]
+  where
+    pureFold :: Fold a b -> BroadcastChan In a -> IO (IO b)
+    pureFold = Control.Foldl.purely foldBChan
+
+    printList :: Show a => Handle -> FoldM IO a [a]
+    printList hnd = premapM doPrint $ generalize list
+      where
+        doPrint val = val <$ hPrint hnd val
+
+    impureFold :: FoldM IO a b -> BroadcastChan In a -> IO (IO b)
+    impureFold = Control.Foldl.impurely foldBChanM
+
+    foldBChanIn :: TestTree
+    foldBChanIn = testCase "foldBChan in" $ do
+        inChan <- newBroadcastChan
+        inputsBefore <- randomList 10
+        forM_ inputsBefore $ Throw.writeBChan inChan
+        foldList <- pureFold list inChan
+
+        inputsAfter <- randomList 10
+        forM_ inputsAfter $ Throw.writeBChan inChan
+        closeBChan inChan
+        (inputsAfter==) <$> foldList @? "Lists should be equal"
+
+    foldBChanMIn :: TestTree
+    foldBChanMIn = testCase "foldBChanM in" $ do
+        inChan <- newBroadcastChan
+        inputsBefore <- randomList 10
+        forM_ inputsBefore $ Throw.writeBChan inChan
+        inputsAfter <- randomList 10
+
+        control <- withLoggedOutput "foldBChanControl.out" $ \hnd -> do
+            forM_ inputsAfter (hPrint hnd)
+            return inputsAfter
+
+        validation <- withLoggedOutput "foldBChanM.out" $ \hnd -> do
+            foldPrintList <- impureFold (printList hnd) inChan
+            forM_ inputsAfter $ Throw.writeBChan inChan
+            closeBChan inChan
+            foldPrintList
+
+        assertEqual "Results and output should be equal" control validation
+
 main :: IO ()
 main = runTests "basic"
   [ readTests
   , writeTests
   , closedTests
   , chanContentsTests
+  , foldlTests
   ]
