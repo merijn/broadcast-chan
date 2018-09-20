@@ -1,8 +1,9 @@
 {-# LANGUAGE CPP #-}
 #if !MIN_VERSION_base(4,8,0)
-import Control.Applicative ((<$>))
+import Control.Applicative ((<$), (<$>))
 #endif
-import Control.Foldl (Fold, FoldM, generalize, impurely, list, premapM, purely)
+import Control.Foldl (Fold, FoldM)
+import qualified Control.Foldl as Foldl
 import Control.Monad (forM_)
 import Control.Monad.Loops (unfoldM)
 import Data.Maybe (isNothing)
@@ -226,27 +227,27 @@ foldlTests = testGroup "foldl tests"
     ]
   where
     pureFold :: Fold a b -> BroadcastChan In a -> IO (IO b)
-    pureFold = Control.Foldl.purely foldBChan
+    pureFold = Foldl.purely foldBChan
 
     printList :: Show a => Handle -> FoldM IO a [a]
-    printList hnd = premapM doPrint $ generalize list
+    printList hnd = Foldl.premapM doPrint $ Foldl.generalize Foldl.list
       where
         doPrint val = val <$ hPrint hnd val
 
     impureFold :: FoldM IO a b -> BroadcastChan In a -> IO (IO b)
-    impureFold = Control.Foldl.impurely foldBChanM
+    impureFold = Foldl.impurely foldBChanM
 
     foldBChanIn :: TestTree
     foldBChanIn = testCase "foldBChan in" $ do
         inChan <- newBroadcastChan
         inputsBefore <- randomList 10
         forM_ inputsBefore $ Throw.writeBChan inChan
-        foldList <- pureFold list inChan
+        foldList <- shouldn'tBlock $ pureFold Foldl.list inChan
 
         inputsAfter <- randomList 10
         forM_ inputsAfter $ Throw.writeBChan inChan
         closeBChan inChan
-        (inputsAfter==) <$> foldList @? "Lists should be equal"
+        (inputsAfter==) <$> shouldn'tBlock foldList @? "Lists should be equal"
 
     foldBChanMIn :: TestTree
     foldBChanMIn = testCase "foldBChanM in" $ do
@@ -256,11 +257,10 @@ foldlTests = testGroup "foldl tests"
         inputsAfter <- randomList 10
 
         control <- withLoggedOutput "foldBChanControl.out" $ \hnd -> do
-            forM_ inputsAfter (hPrint hnd)
-            return inputsAfter
+            Foldl.foldM (printList hnd) inputsAfter
 
         validation <- withLoggedOutput "foldBChanM.out" $ \hnd -> do
-            foldPrintList <- impureFold (printList hnd) inChan
+            foldPrintList <- shouldn'tBlock $ impureFold (printList hnd) inChan
             forM_ inputsAfter $ Throw.writeBChan inChan
             closeBChan inChan
             foldPrintList

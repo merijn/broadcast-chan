@@ -148,51 +148,6 @@ newBChanListener (BChan mvar) = liftIO $ do
    newReadVar <- newMVar hole
    return (BChan newReadVar)
 
--- | Strict fold of the 'BroadcastChan''s messages. Can be used with
--- "Control.Foldl" from Tekmo's foldl package:
---
--- > Control.Foldl.purely foldBChan :: MonadIO m => Fold a b -> BroadcastChan In a -> m (m b)
-foldBChan
-    :: MonadIO m
-    => (x -> a -> x)
-    -> x
-    -> (x -> b)
-    -> BroadcastChan In a
-    -> m (m b)
-foldBChan step begin done chan = do
-    listen <- newBChanListener chan
-    return $ go listen begin
-  where
-    go listen x = do
-        x' <- readBChan listen
-        case x' of
-            Just x'' -> go listen $! step x x''
-            Nothing -> return $! done x
-{-# INLINABLE foldBChan #-}
-
--- | Strict, monadic fold of the 'BroadcastChan''s messages. Can be used with
--- "Control.Foldl" from Tekmo's foldl package:
---
--- > Control.Foldl.impurely foldBChanM :: MonadIO m => FoldM m a b -> BroadcastChan In a -> m (m b)
-foldBChanM
-    :: MonadIO m
-    => (x -> a -> m x)
-    -> m x
-    -> (x -> m b)
-    -> BroadcastChan In a
-    -> m (m b)
-foldBChanM step begin done chan = do
-    listen <- newBChanListener chan
-    x0 <- begin
-    return $ go listen x0
-  where
-    go listen x = do
-        x' <- readBChan listen
-        case x' of
-            Just x'' -> step x x'' >>= go listen
-            Nothing -> done x
-{-# INLINABLE foldBChanM #-}
-
 -- | Return a lazy list representing the messages written to the channel.
 --
 -- Uses 'unsafeInterleaveIO' to defer the IO operations.
@@ -221,6 +176,52 @@ getBChanContents = newBChanListener >=> go
             Just x -> do
                 xs <- go ch
                 return (x:xs)
+
+-- | Strict fold of the 'BroadcastChan''s messages. Can be used with
+-- "Control.Foldl" from Tekmo's foldl package:
+--
+-- @"Control.Foldl".'Control.Foldl.purely' 'foldBChan' :: 'MonadIO' m => 'Control.Foldl.Fold' a b -> 'BroadcastChan' 'In' a -> m (m b)@
+foldBChan
+    :: (MonadIO m, MonadIO n)
+    => (x -> a -> x)
+    -> x
+    -> (x -> b)
+    -> BroadcastChan In a
+    -> n (m b)
+foldBChan step begin done chan = do
+    listen <- newBChanListener chan
+    return $ go listen begin
+  where
+    go listen x = do
+        x' <- readBChan listen
+        case x' of
+            Just x'' -> go listen $! step x x''
+            Nothing -> return $! done x
+{-# INLINABLE foldBChan #-}
+
+-- | Strict, monadic fold of the 'BroadcastChan''s messages. Can be used with
+-- "Control.Foldl" from Tekmo's foldl package:
+--
+-- @"Control.Foldl".'Control.Foldl.impurely' 'foldBChanM' :: 'MonadIO' m => 'FoldM' m a b -> 'BroadcastChan' 'In' a -> m (m b)
+foldBChanM
+    :: (MonadIO m, MonadIO n)
+    => (x -> a -> m x)
+    -> m x
+    -> (x -> m b)
+    -> BroadcastChan In a
+    -> n (m b)
+foldBChanM step begin done chan = do
+    listen <- newBChanListener chan
+    return $ do
+        x0 <- begin
+        go listen x0
+  where
+    go listen x = do
+        x' <- readBChan listen
+        case x' of
+            Just x'' -> step x x'' >>= go listen
+            Nothing -> done x
+{-# INLINABLE foldBChanM #-}
 
 #if !MIN_VERSION_base(4,6,0)
 {-# INLINE modifyMVarMasked #-}
