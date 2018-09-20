@@ -169,6 +169,8 @@ speedupTest getCache seqSink parSink n inputs pause name = testCase name $ do
                 timed (seqSink inputs testFun) >>= putMVar mvar
                 readMVar mvar
 
+-- | Run an IO action while logging the output to a @Handle@. Returns the
+-- result and the logged output.
 withLoggedOutput :: FilePath -> (Handle -> IO r) -> IO (r, Text)
 withLoggedOutput filename act = withSystemTempFile filename $ \_ hnd ->
   (,) <$> act hnd <*> rewindAndRead hnd
