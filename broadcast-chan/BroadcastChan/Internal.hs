@@ -180,13 +180,32 @@ getBChanContents = newBChanListener >=> go
 -- | Strict fold of the 'BroadcastChan''s messages. Can be used with
 -- "Control.Foldl" from Tekmo's foldl package:
 --
--- @"Control.Foldl".'Control.Foldl.purely' 'foldBChan' :: 'MonadIO' m => 'Control.Foldl.Fold' a b -> 'BroadcastChan' 'In' a -> m (m b)@
+-- @"Control.Foldl".'Control.Foldl.purely' 'foldBChan' :: ('MonadIO' m, 'MonadIO' n) => 'Control.Foldl.Fold' a b -> 'BroadcastChan' d a -> n (m b)@
+--
+-- The result of this function is a nested monadic value to give more
+-- fine-grained control/separation between the start of listening for messages
+-- and the start of processing. The inner action folds the actual messages and
+-- completes when the channel is closed and exhausted. The outer action
+-- controls from when on messages are received. Specifically:
+--
+--  ['BroadcastChan' 'In':]:
+--
+--      Will process all messages sent after the outer action completes.
+--
+--  ['BroadcastChan' 'Out':]:
+--
+--      Will process all messages that are unread when the outer action
+--      completes, as well as all future messages.
+--
+--      After the outer action completes the fold is unaffected by other
+--      (concurrent) reads performed on the original channel. So it's safe to
+--      reuse the channel.
 foldBChan
     :: (MonadIO m, MonadIO n)
     => (x -> a -> x)
     -> x
     -> (x -> b)
-    -> BroadcastChan In a
+    -> BroadcastChan d a
     -> n (m b)
 foldBChan step begin done chan = do
     listen <- newBChanListener chan
@@ -202,13 +221,15 @@ foldBChan step begin done chan = do
 -- | Strict, monadic fold of the 'BroadcastChan''s messages. Can be used with
 -- "Control.Foldl" from Tekmo's foldl package:
 --
--- @"Control.Foldl".'Control.Foldl.impurely' 'foldBChanM' :: 'MonadIO' m => 'FoldM' m a b -> 'BroadcastChan' 'In' a -> m (m b)
+-- @"Control.Foldl".'Control.Foldl.impurely' 'foldBChanM' :: ('MonadIO' m, 'MonadIO' n) => 'FoldM' m a b -> 'BroadcastChan' d a -> n (m b)@
+--
+-- Has the same behaviour and guarantees as 'foldBChan'.
 foldBChanM
     :: (MonadIO m, MonadIO n)
     => (x -> a -> m x)
     -> m x
     -> (x -> m b)
-    -> BroadcastChan In a
+    -> BroadcastChan d a
     -> n (m b)
 foldBChanM step begin done chan = do
     listen <- newBChanListener chan
