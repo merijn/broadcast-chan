@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK not-home #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE NamedFieldPuns #-}

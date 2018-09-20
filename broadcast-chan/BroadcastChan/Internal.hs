@@ -9,6 +9,7 @@ import Control.Applicative ((<*))
 #endif
 import Control.Concurrent.MVar
 import Control.Exception (mask_)
+import Control.Monad ((>=>))
 import Control.Monad.IO.Unlift (MonadIO(..))
 import System.IO.Unsafe (unsafeInterleaveIO)
 
@@ -30,7 +31,7 @@ type In = 'In
 type Out = 'Out
 
 -- | The abstract type representing the read or write end of a 'BroadcastChan'.
-newtype BroadcastChan (d :: Direction) a = BChan (MVar (Stream a))
+newtype BroadcastChan (dir :: Direction) a = BChan (MVar (Stream a))
     deriving (Eq)
 
 type Stream a = MVar (ChItem a)
@@ -53,26 +54,35 @@ closeBChan (BChan writeVar) = liftIO . mask_ $ do
     -- old_hole is always empty unless the channel was already closed
     tryPutMVar old_hole Closed <* putMVar writeVar old_hole
 
--- | Check whether a 'BroadcastChan' is closed. 'True' means it's closed,
--- 'False' means it's writable. However:
+-- | Check whether a 'BroadcastChan' is closed. 'True' meaning that future
+-- read/write operations on the channel will always fail.
 --
--- __Beware of TOC-TOU races__: It is possible for a 'BroadcastChan' to be
--- closed by another thread. If multiple threads use the same 'BroadcastChan' a
--- 'closeBChan' from another thread might result in the channel being closed
--- right after 'isClosedBChan' returns.
-isClosedBChan :: MonadIO m => BroadcastChan In a -> m Bool
+--  ['BroadcastChan' 'In':]:
+--
+--      @True@ indicates the channel is closed and writes will always fail.
+--
+--      __Beware of TOC-TOU races__: It is possible for a 'BroadcastChan' to be
+--      closed by another thread. If multiple threads use the same channel
+--      a 'closeBChan' from another thread can result in the channel being
+--      closed right after 'isClosedBChan' returns.
+--
+--  ['BroadcastChan' 'Out':]:
+--
+--      @True@ indicates the channel is both closed and empty, meaning reads
+--      will always fail.
+isClosedBChan :: MonadIO m => BroadcastChan dir a -> m Bool
 #if MIN_VERSION_base(4,7,0)
-isClosedBChan (BChan writeVar) = liftIO $ do
-    old_hole <- readMVar writeVar
+isClosedBChan (BChan mvar) = liftIO $ do
+    old_hole <- readMVar mvar
     val <- tryReadMVar old_hole
 #else
-isClosedBChan (BChan writeVar) = liftIO . mask_ $ do
-    old_hole <- takeMVar writeVar
+isClosedBChan (BChan mvar) = liftIO . mask_ $ do
+    old_hole <- takeMVar mvar
     val <- tryTakeMVar old_hole
     case val of
         Just x -> putMVar old_hole x
         Nothing -> return ()
-    putMVar writeVar old_hole
+    putMVar mvar old_hole
 #endif
     case val of
         Just Closed -> return True
@@ -122,11 +132,19 @@ readBChan (BChan readVar) = liftIO $ do
 -- be reproduced, but only by expanding readMVar and inserting an
 -- artificial yield between its takeMVar and putMVar operations.
 
--- | Create a new read end for a 'BroadcastChan'. Will receive all messages
--- written to the channel __after__ this read end is created.
-newBChanListener :: MonadIO m => BroadcastChan In a -> m (BroadcastChan Out a)
-newBChanListener (BChan writeVar) = liftIO $ do
-   hole       <- readMVar writeVar
+-- | Create a new read end for a 'BroadcastChan'.
+--
+--  ['BroadcastChan' 'In':]:
+--
+--      Will receive all messages written to the channel __after__ this read
+--      end is created.
+--
+--  ['BroadcastChan' 'Out':]:
+--
+--      Will receive all currently unread messages and all future messages.
+newBChanListener :: MonadIO m => BroadcastChan dir a -> m (BroadcastChan Out a)
+newBChanListener (BChan mvar) = liftIO $ do
+   hole       <- readMVar mvar
    newReadVar <- newMVar hole
    return (BChan newReadVar)
 
@@ -175,13 +193,26 @@ foldBChanM step begin done chan = do
             Nothing -> done x
 {-# INLINABLE foldBChanM #-}
 
--- | Return a lazy list representing everything written to the supplied
--- 'BroadcastChan' after this IO action returns. Similar to
--- 'Control.Concurrent.Chan.getChanContents'.
+-- | Return a lazy list representing the messages written to the channel.
 --
 -- Uses 'unsafeInterleaveIO' to defer the IO operations.
-getBChanContents :: BroadcastChan In a -> IO [a]
-getBChanContents chan = newBChanListener chan >>= go
+--
+--  ['BroadcastChan' 'In':]:
+--
+--      The list contains every message written to the channel after this 'IO'
+--      action completes.
+--
+--  ['BroadcastChan' 'Out':]:
+--
+--      The list contains every currently unread message and all future
+--      messages. It's safe to keep using the original channel in any thread.
+--
+--      Unlike 'Control.Concurrent.getChanContents' from "Control.Concurrent",
+--      the list resulting from this function is __not__ affected by reads on
+--      the input channel. Every message that is unread or written after the
+--      'IO' action completes __will__ end up in the result list.
+getBChanContents :: BroadcastChan dir a -> IO [a]
+getBChanContents = newBChanListener >=> go
   where
     go ch = unsafeInterleaveIO $ do
         result <- readBChan ch
