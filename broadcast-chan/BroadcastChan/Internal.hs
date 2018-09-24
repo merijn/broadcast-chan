@@ -13,10 +13,6 @@ import Control.Monad ((>=>))
 import Control.Monad.IO.Unlift (MonadIO(..))
 import System.IO.Unsafe (unsafeInterleaveIO)
 
-#if !MIN_VERSION_base(4,6,0)
-import Control.Exception (evaluate, onException)
-#endif
-
 -- | Used with DataKinds as phantom type indicating whether a 'BroadcastChan'
 -- value is a read or write end.
 data Direction = In  -- ^ Indicates a write 'BroadcastChan'
@@ -243,14 +239,3 @@ foldBChanM step begin done chan = do
             Just x'' -> step x x'' >>= go listen
             Nothing -> done x
 {-# INLINABLE foldBChanM #-}
-
-#if !MIN_VERSION_base(4,6,0)
-{-# INLINE modifyMVarMasked #-}
-modifyMVarMasked :: MVar a -> (a -> IO (a,b)) -> IO b
-modifyMVarMasked m io =
-  mask_ $ do
-    a      <- takeMVar m
-    (a',b) <- (io a >>= evaluate) `onException` putMVar m a
-    putMVar m a'
-    return b
-#endif
