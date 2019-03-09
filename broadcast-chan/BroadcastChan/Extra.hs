@@ -40,6 +40,7 @@ import Control.Concurrent.QSemN
 import Control.Exception (Exception(..), SomeException(..))
 import qualified Control.Exception as Exc
 import Control.Monad ((>=>), replicateM, void)
+import Control.Monad.Fail (MonadFail)
 import Control.Monad.IO.Unlift (MonadIO(..))
 import Data.Typeable (Typeable)
 import System.Mem.Weak (Weak, deRefWeak)
@@ -204,7 +205,7 @@ parallelCore hndl threads onDrop f = liftIO $ do
 -- performs the actual parallel processing of elements.
 runParallel
     :: forall a b m n r
-     . (MonadIO m, MonadIO n)
+     . (MonadIO m, MonadIO n, MonadFail m)
     => Either (b -> n r) (r -> b -> n r)
     -- ^ Output yielder
     -> Handler IO a

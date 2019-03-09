@@ -4,6 +4,7 @@
 module BroadcastChan.Conduit.Internal (parMapM, parMapM_) where
 
 import Control.Monad ((>=>))
+import Control.Monad.Fail (MonadFail)
 import Control.Monad.Trans.Resource (MonadResource)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.IO.Unlift (MonadUnliftIO(askUnliftIO), UnliftIO(..))
@@ -29,7 +30,7 @@ bracketOnError alloc clean work =
 -- This function does __NOT__ guarantee that input elements are processed or
 -- output in a deterministic order!
 parMapM
-    :: (MonadResource m, MonadUnliftIO m)
+    :: (MonadResource m, MonadUnliftIO m, MonadFail m)
     => Handler m a
     -- ^ Exception handler
     -> Int

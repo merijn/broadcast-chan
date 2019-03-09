@@ -4,6 +4,7 @@
 module BroadcastChan.Pipes.Internal (parMapM, parMapM_) where
 
 import Control.Monad ((>=>), replicateM)
+import Control.Monad.Fail (MonadFail)
 import Data.Foldable (traverse_)
 import Pipes
 import qualified Pipes.Prelude as P
@@ -23,7 +24,7 @@ bracketOnError alloc clean =
 -- output in a deterministic order!
 parMapM
     :: forall a b m
-     . MonadSafe m
+     . (MonadSafe m, MonadFail m)
     => Handler IO a
     -- ^ Exception handler
     -> Int

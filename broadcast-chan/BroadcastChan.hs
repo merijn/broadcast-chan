@@ -83,6 +83,7 @@ module BroadcastChan (
 import Control.Exception
     (SomeException(..), mask, throwIO, try, uninterruptibleMask_)
 import Control.Monad (liftM)
+import Control.Monad.Fail (MonadFail)
 import Control.Monad.IO.Unlift (MonadUnliftIO(..), UnliftIO(..))
 import Data.Foldable as F (Foldable(..), foldlM, forM_)
 
@@ -131,7 +132,7 @@ parMapM_ hndl threads workFun input = do
 -- This function does __NOT__ guarantee that elements are processed in a
 -- deterministic order!
 parFoldMap
-    :: (F.Foldable f, MonadUnliftIO m)
+    :: (F.Foldable f, MonadUnliftIO m, MonadFail m)
     => Handler m a
     -- ^ Exception handler
     -> Int
@@ -154,7 +155,7 @@ parFoldMap hndl threads work f =
 -- deterministic order!
 parFoldMapM
     :: forall a b f m r
-     . (F.Foldable f, MonadUnliftIO m)
+     . (F.Foldable f, MonadUnliftIO m, MonadFail m)
     => Handler m a
     -- ^ Exception handler
     -> Int
