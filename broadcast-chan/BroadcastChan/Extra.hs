@@ -231,8 +231,8 @@ runParallel yielder hndl threads work pipe = do
 
     let queueAndYield :: a -> m (Maybe b)
         queueAndYield x = do
-            Just v <- liftIO $ readBChan outChanOut <* bufferValue x
-            return v
+            mV <- liftIO $ readBChan outChanOut <* bufferValue x
+            maybe (error "runParallel: readBChan failed") pure mV
 
         finish :: r -> n r
         finish r = do

@@ -38,7 +38,7 @@ Library
   Build-Depends:        base >= 4.7 && < 5
                ,        broadcast-chan == 0.2.0.*
                ,        pipes >= 4.1.6 && < 4.4
-               ,        pipes-safe == 2.2.*
+               ,        pipes-safe >= 2.2 && < 2.4
 
 Test-Suite pipes
   Default-Language:     Haskell2010
