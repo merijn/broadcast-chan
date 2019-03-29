@@ -345,7 +345,7 @@ genStreamTests name seq par = askOption $ \(SlowTests slow) ->
   where
     term = Simple Terminate
 
--- | Run a list of 'TestTree''s and group them under the specified name.
+-- | Run a list of 'TestTree'​'s and group them under the specified name.
 runTests :: String -> [TestTree] -> IO ()
 runTests name tests = do
     setEnv "TASTY_NUM_THREADS" "100"

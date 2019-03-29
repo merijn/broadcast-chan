@@ -173,7 +173,7 @@ getBChanContents = newBChanListener >=> go
                 xs <- go ch
                 return (x:xs)
 
--- | Strict fold of the 'BroadcastChan''s messages. Can be used with
+-- | Strict fold of the 'BroadcastChan'​'s messages. Can be used with
 -- "Control.Foldl" from Tekmo's foldl package:
 --
 -- @"Control.Foldl".'Control.Foldl.purely' 'foldBChan' :: ('MonadIO' m, 'MonadIO' n) => 'Control.Foldl.Fold' a b -> 'BroadcastChan' d a -> n (m b)@
@@ -214,10 +214,10 @@ foldBChan step begin done chan = do
             Nothing -> return $! done x
 {-# INLINABLE foldBChan #-}
 
--- | Strict, monadic fold of the 'BroadcastChan''s messages. Can be used with
+-- | Strict, monadic fold of the 'BroadcastChan'​'s messages. Can be used with
 -- "Control.Foldl" from Tekmo's foldl package:
 --
--- @"Control.Foldl".'Control.Foldl.impurely' 'foldBChanM' :: ('MonadIO' m, 'MonadIO' n) => 'FoldM' m a b -> 'BroadcastChan' d a -> n (m b)@
+-- @"Control.Foldl".'Control.Foldl.impurely' 'foldBChanM' :: ('MonadIO' m, 'MonadIO' n) => 'Control.Foldl.FoldM' m a b -> 'BroadcastChan' d a -> n (m b)@
 --
 -- Has the same behaviour and guarantees as 'foldBChan'.
 foldBChanM

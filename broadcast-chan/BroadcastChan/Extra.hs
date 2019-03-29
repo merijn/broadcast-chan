@@ -199,9 +199,9 @@ parallelCore hndl threads onDrop f = liftIO $ do
 -- See "BroadcastChan" or @broadcast-chan-conduit@ for examples.
 --
 -- The returned 'BracketOnError' has a 'allocate' action that takes care of
--- setting up 'forkIO' threads and exception handlers. The 'cleanup' action
--- ensures all threads are terminate in case of an exception. Finally, 'action'
--- performs the actual parallel processing of elements.
+-- setting up 'Control.Concurrent.forkIO' threads and exception handlers. The
+-- 'cleanup' action ensures all threads are terminate in case of an exception.
+-- Finally, 'action' performs the actual parallel processing of elements.
 runParallel
     :: forall a b m n r
      . (MonadIO m, MonadIO n)
@@ -266,9 +266,9 @@ runParallel yielder hndl threads work pipe = do
 -- @broadcast-chan-conduit@ for examples.
 --
 -- The returned 'BracketOnError' has a 'allocate' action that takes care of
--- setting up 'forkIO' threads and exception handlers. The 'cleanup' action
--- ensures all threads are terminate in case of an exception. Finally, 'action'
--- performs the actual parallel processing of elements.
+-- setting up 'Control.Concurrent.forkIO' threads and exception handlers. Th
+-- 'cleanup' action ensures all threads are terminate in case of an exception.
+-- Finally, 'action' performs the actual parallel processing of elements.
 runParallel_
     :: (MonadIO m, MonadIO n)
     => Handler IO a
