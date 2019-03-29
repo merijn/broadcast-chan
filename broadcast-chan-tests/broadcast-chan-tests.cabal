@@ -39,7 +39,7 @@ Library
                ,        async >= 2.1 && < 2.3
                ,        broadcast-chan == 0.2.0.1
                ,        clock == 0.7.*
-               ,        containers >= 0.4 && < 0.6
+               ,        containers >= 0.4 && < 0.7
                ,        optparse-applicative >= 0.12 && < 0.15
                ,        paramtree >= 0.1.1 && < 0.2
                ,        stm >= 2.4 && < 2.6
@@ -92,7 +92,7 @@ Test-Suite parallel-io
   Build-Depends:        base
                ,        broadcast-chan
                ,        broadcast-chan-tests
-               ,        containers >= 0.4 && < 0.6
+               ,        containers >= 0.4 && < 0.7
 
 
 Source-Repository head

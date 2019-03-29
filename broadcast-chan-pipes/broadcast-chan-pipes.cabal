@@ -38,7 +38,7 @@ Library
   Build-Depends:        base >= 4.7 && < 5
                ,        broadcast-chan == 0.2.0.*
                ,        pipes >= 4.1.6 && < 4.4
-               ,        pipes-safe == 2.2.*
+               ,        pipes-safe >= 2.2 && < 2.4
 
 Test-Suite pipes
   Default-Language:     Haskell2010
@@ -49,10 +49,10 @@ Test-Suite pipes
   Build-Depends:        base
                ,        broadcast-chan-pipes
                ,        broadcast-chan-tests
-               ,        containers >= 0.4 && < 0.6
+               ,        containers >= 0.4 && < 0.7
                ,        foldl >= 1.0.4 && < 1.5
                ,        pipes >= 4.1.6 && < 4.4
-               ,        pipes-safe == 2.2.*
+               ,        pipes-safe >= 2.2 && < 2.4
 
 Source-Repository head
   Type:     git

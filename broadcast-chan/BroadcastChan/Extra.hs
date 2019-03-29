@@ -231,7 +231,7 @@ runParallel yielder hndl threads work pipe = do
 
     let queueAndYield :: a -> m (Maybe b)
         queueAndYield x = do
-            Just v <- liftIO $ readBChan outChanOut <* bufferValue x
+            ~(Just v) <- liftIO $ readBChan outChanOut <* bufferValue x
             return v
 
         finish :: r -> n r
