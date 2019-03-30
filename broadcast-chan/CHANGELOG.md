@@ -1,3 +1,7 @@
+0.2.0.2 [2019.03.30]
+--------------------
+* GHC 8.6/MonadFail compatibility fix
+
 0.2.0.1 [2018.09.24]
 --------------------
 * Loosen STM bounds for new stackage release.
