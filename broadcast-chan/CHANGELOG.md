@@ -1,3 +1,9 @@
+0.2.1 [2019.11.17]
+------------------
+* Adds `ThreadBracket`, `runParallelWith`, and `runParallelWith_` to
+  `BroadcastChan.Extra` to support thread related resource management. This is
+  required to fix `broadcast-chan-conduit`'s use of `MonadResource`.
+
 0.2.0.2 [2019.03.30]
 --------------------
 * GHC 8.6/MonadFail compatibility fix

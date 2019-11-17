@@ -1,3 +1,7 @@
+0.2.1 [2019.11.17]
+------------------
+* Bump for new broadcast-chan release.
+
 0.2.0.2 [2019.03.30]
 --------------------
 * Update bounds for GHC 8.6

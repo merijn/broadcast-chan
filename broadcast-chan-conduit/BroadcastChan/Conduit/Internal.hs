@@ -5,17 +5,18 @@ module BroadcastChan.Conduit.Internal (parMapM, parMapM_) where
 
 import Control.Monad ((>=>))
 import Control.Monad.Trans.Resource (MonadResource)
+import qualified Control.Monad.Trans.Resource as Resource
+import qualified Control.Monad.Trans.Resource.Internal as ResourceI
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.IO.Unlift (MonadUnliftIO(askUnliftIO), UnliftIO(..))
-import Data.Acquire
-    (ReleaseType(ReleaseException), allocateAcquire, mkAcquireType)
+import Data.Acquire (ReleaseType(..), allocateAcquire, mkAcquireType)
 import Data.Conduit
 import qualified Data.Conduit.List as C
 import Data.Foldable (traverse_)
 import Data.Void (Void)
 
-import BroadcastChan.Extra
-    (BracketOnError(..), Handler, mapHandler, runParallel, runParallel_)
+import BroadcastChan.Extra (BracketOnError(..), Handler, ThreadBracket(..))
+import qualified BroadcastChan.Extra as Extra
 
 bracketOnError :: MonadResource m => IO a -> (a -> IO ()) -> m r -> m r
 bracketOnError alloc clean work =
@@ -40,9 +41,19 @@ parMapM
 parMapM hnd threads workFun = do
     UnliftIO runInIO <- lift askUnliftIO
 
-    Bracket{allocate,cleanup,action} <- runParallel
+    resourceState <- Resource.liftResourceT Resource.getInternalState
+
+    let threadBracket = ThreadBracket
+            { setupFork = ResourceI.stateAlloc resourceState
+            , cleanupFork = ResourceI.stateCleanup ReleaseNormal resourceState
+            , cleanupForkError =
+                ResourceI.stateCleanup ReleaseException resourceState
+            }
+
+    Bracket{allocate,cleanup,action} <- Extra.runParallelWith
+        threadBracket
         (Left yield)
-        (mapHandler runInIO hnd)
+        (Extra.mapHandler runInIO hnd)
         threads
         (runInIO . workFun)
         body
@@ -70,8 +81,18 @@ parMapM_
 parMapM_ hnd threads workFun = do
     UnliftIO runInIO <- lift askUnliftIO
 
-    Bracket{allocate,cleanup,action} <- runParallel_
-        (mapHandler runInIO hnd)
+    resourceState <- Resource.liftResourceT Resource.getInternalState
+
+    let threadBracket = ThreadBracket
+            { setupFork = ResourceI.stateAlloc resourceState
+            , cleanupFork = ResourceI.stateCleanup ReleaseNormal resourceState
+            , cleanupForkError =
+                ResourceI.stateCleanup ReleaseException resourceState
+            }
+
+    Bracket{allocate,cleanup,action} <- Extra.runParallelWith_
+        threadBracket
+        (Extra.mapHandler runInIO hnd)
         threads
         (runInIO . workFun)
         C.mapM_

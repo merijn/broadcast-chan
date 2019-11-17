@@ -25,9 +25,12 @@ module BroadcastChan.Extra
     ( Action(..)
     , BracketOnError(..)
     , Handler(..)
+    , ThreadBracket(..)
     , mapHandler
     , runParallel
+    , runParallelWith
     , runParallel_
+    , runParallelWith_
     ) where
 
 #if !MIN_VERSION_base(4,8,0)
@@ -37,14 +40,18 @@ import Control.Concurrent (ThreadId, forkFinally, mkWeakThreadId, myThreadId)
 import Control.Concurrent.MVar
 import Control.Concurrent.QSem
 import Control.Concurrent.QSemN
-import Control.Exception (Exception(..), SomeException(..))
+import Control.Exception (Exception(..), SomeException(..), bracketOnError)
 import qualified Control.Exception as Exc
 import Control.Monad ((>=>), replicateM, void)
+import Control.Monad.Trans.Cont (ContT(..))
 import Control.Monad.IO.Unlift (MonadIO(..))
 import Data.Typeable (Typeable)
 import System.Mem.Weak (Weak, deRefWeak)
 
 import BroadcastChan.Internal
+
+evalContT :: Monad m => ContT r m r -> m r
+evalContT m = runContT m return
 
 -- DANGER! Breaks the invariant that you can't write to closed channels!
 -- Only meant to be used in 'parallelCore'!
@@ -98,6 +105,33 @@ data BracketOnError m r
     --   finish and threads to terminate.
     }
 
+-- | Datatype for specifying additional setup/cleanup around forking threads.
+-- Used by 'runParallelWith' and 'runParallelWith_' to fix resource management
+-- in @broadcast-chan-conduit@.
+--
+-- If the allocation action can fail/abort with an exception it __MUST__ take
+-- care not to leak resources in these cases. In other words, IFF 'setupFork'
+-- succeeds then this library will ensure the corresponding cleanup runs.
+--
+-- @since 0.2.1
+data ThreadBracket
+    = ThreadBracket
+    { setupFork :: IO ()
+    -- ^ Setup action to run before spawning a new thread.
+    , cleanupFork :: IO ()
+    -- ^ Normal cleanup action upon thread termination.
+    , cleanupForkError :: IO ()
+    -- ^ Exceptional cleanup action in case thread terminates due to an
+    -- exception.
+    }
+
+noopBracket :: ThreadBracket
+noopBracket = ThreadBracket
+    { setupFork = return ()
+    , cleanupFork = return ()
+    , cleanupForkError = return ()
+    }
+
 -- | Convenience function for changing the monad the exception handler runs in.
 mapHandler :: (m Action -> n Action) -> Handler m a -> Handler n a
 mapHandler _ (Simple act) = Simple act
@@ -111,9 +145,10 @@ parallelCore
     => Handler IO a
     -> Int
     -> IO ()
+    -> ThreadBracket
     -> (a -> IO ())
     -> m (IO [Weak ThreadId], [Weak ThreadId] -> IO (), a -> IO (), m ())
-parallelCore hndl threads onDrop f = liftIO $ do
+parallelCore hndl threads onDrop threadBracket f = liftIO $ do
     originTid <- myThreadId
     inChanIn <- newBroadcastChan
     inChanOut <- newBChanListener inChanIn
@@ -144,20 +179,27 @@ parallelCore hndl threads onDrop f = liftIO $ do
                     f a `Exc.catch` handler a
                     processInput
 
-        allocate :: IO [Weak ThreadId]
-        allocate = liftIO $ do
-            tids <- replicateM threads . forkFinally processInput $ \exit -> do
+        unsafeAllocThread :: IO (Weak ThreadId)
+        unsafeAllocThread = do
+            setupFork
+            tid <- forkFinally processInput $ \exit -> do
                 signalQSemN shutdownSem 1
                 case exit of
                     Left exc
-                      | Just Shutdown <- fromException exc -> return ()
+                      | Just Shutdown <- fromException exc -> cleanupForkError
                       | otherwise ->
                           Exc.throwTo originTid exc `Exc.catch` shutdownHandler
-                    Right () -> return ()
+                    Right () -> cleanupFork
 
-            mapM mkWeakThreadId tids
+            mkWeakThreadId tid
           where
             shutdownHandler Shutdown = return ()
+
+        allocThread :: ContT r IO (Weak ThreadId)
+        allocThread = ContT $ bracketOnError unsafeAllocThread killWeakThread
+
+        allocateThreads :: IO [Weak ThreadId]
+        allocateThreads = evalContT $ replicateM threads allocThread
 
         cleanup :: [Weak ThreadId] -> IO ()
         cleanup threadIds = liftIO . Exc.uninterruptibleMask_ $ do
@@ -169,8 +211,10 @@ parallelCore hndl threads onDrop f = liftIO $ do
             closeBChan inChanIn
             liftIO $ waitQSemN endSem threads
 
-    return (allocate, cleanup, bufferValue, wait)
+    return (allocateThreads, cleanup, bufferValue, wait)
   where
+    ThreadBracket{setupFork,cleanupFork,cleanupForkError} = threadBracket
+
     killWeakThread :: Weak ThreadId -> IO ()
     killWeakThread wTid = do
         tid <- deRefWeak wTid
@@ -216,7 +260,37 @@ runParallel
     -> ((a -> m ()) -> (a -> m (Maybe b)) -> n r)
     -- ^ \"Stream\" processing function
     -> n (BracketOnError n r)
-runParallel yielder hndl threads work pipe = do
+runParallel = runParallelWith noopBracket
+
+-- | Like 'runParallel', but accepts a setup and cleanup action that will be
+-- run before spawning a new thread and upon thread exit respectively.
+--
+-- The main use case is to properly manage the resource reference counts of
+-- 'Control.Monad.Trans.Resource.ResourceT'.
+--
+-- If the setup throws an 'IO' exception or otherwise aborts, it __MUST__
+-- ensure any allocated resource are freed. If it completes without an
+-- exception, the cleanup is guaranteed to run (assuming proper use of
+-- bracketing with the returned 'BracketOnError').
+--
+-- @since 0.2.1
+runParallelWith
+    :: forall a b m n r
+     . (MonadIO m, MonadIO n)
+    => ThreadBracket
+    -- ^ Bracketing action used to manage resources across thread spawns
+    -> Either (b -> n r) (r -> b -> n r)
+    -- ^ Output yielder
+    -> Handler IO a
+    -- ^ Parallel processing exception handler
+    -> Int
+    -- ^ Number of threads to use
+    -> (a -> IO b)
+    -- ^ Function to run in parallel
+    -> ((a -> m ()) -> (a -> m (Maybe b)) -> n r)
+    -- ^ \"Stream\" processing function
+    -> n (BracketOnError n r)
+runParallelWith threadBracket yielder hndl threads work pipe = do
     outChanIn <- newBroadcastChan
     outChanOut <- newBChanListener outChanIn
 
@@ -227,7 +301,7 @@ runParallel yielder hndl threads work pipe = do
         notifyDrop = void $ writeBChan outChanIn Nothing
 
     (allocate, cleanup, bufferValue, wait) <-
-        parallelCore hndl threads notifyDrop process
+        parallelCore hndl threads notifyDrop threadBracket process
 
     let queueAndYield :: a -> m (Maybe b)
         queueAndYield x = do
@@ -280,13 +354,40 @@ runParallel_
     -> ((a -> m ()) -> n r)
     -- ^ \"Stream\" processing function
     -> n (BracketOnError n r)
-runParallel_ hndl threads workFun processElems = do
+runParallel_ = runParallelWith_ noopBracket
+
+-- | Like 'runParallel_', but accepts a setup and cleanup action that will be
+-- run before spawning a new thread and upon thread exit respectively.
+--
+-- The main use case is to properly manage the resource reference counts of
+-- 'Control.Monad.Trans.Resource.ResourceT'.
+--
+-- If the setup throws an 'IO' exception or otherwise aborts, it __MUST__
+-- ensure any allocated resource are freed. If it completes without an
+-- exception, the cleanup is guaranteed to run (assuming proper use of
+-- bracketing with the returned 'BracketOnError').
+--
+-- @since 0.2.1
+runParallelWith_
+    :: (MonadIO m, MonadIO n)
+    => ThreadBracket
+    -- ^ Bracketing action used to manage resources across thread spawns
+    -> Handler IO a
+    -- ^ Parallel processing exception handler
+    -> Int
+    -- ^ Number of threads to use
+    -> (a -> IO ())
+    -- ^ Function to run in parallel
+    -> ((a -> m ()) -> n r)
+    -- ^ \"Stream\" processing function
+    -> n (BracketOnError n r)
+runParallelWith_ threadBracket hndl threads workFun processElems = do
     sem <- liftIO $ newQSem threads
 
     let process x = signalQSem sem >> workFun x
 
     (allocate, cleanup, bufferValue, wait) <-
-        parallelCore hndl threads (return ()) process
+        parallelCore hndl threads (return ()) threadBracket process
 
     let action = do
             result <- processElems $ \v -> liftIO $ do
