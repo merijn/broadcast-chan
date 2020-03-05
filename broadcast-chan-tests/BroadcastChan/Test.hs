@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -27,9 +26,6 @@ module BroadcastChan.Test
     ) where
 
 import Prelude hiding (seq)
-#if !MIN_VERSION_base(4,8,0)
-import Control.Applicative ((<$>),(<*>))
-#endif
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (wait, withAsync)
 import Control.Concurrent.MVar
@@ -53,11 +49,7 @@ import Data.Typeable (Typeable)
 import Options.Applicative (switch, long, help)
 import System.Clock
     (Clock(Monotonic), TimeSpec, diffTimeSpec, getTime, toNanoSecs)
-#if !MIN_VERSION_base(4,7,0)
-import System.Posix.Env (setEnv)
-#else
 import System.Environment (setEnv)
-#endif
 import System.IO (Handle, SeekMode(AbsoluteSeek), hPrint, hSeek)
 import System.IO.Temp (withSystemTempFile)
 import Test.Tasty
@@ -349,9 +341,6 @@ genStreamTests name seq par = askOption $ \(SlowTests slow) ->
 runTests :: String -> [TestTree] -> IO ()
 runTests name tests = do
     setEnv "TASTY_NUM_THREADS" "100"
-#if !MIN_VERSION_base(4,7,0)
-        True
-#endif
     travisTestReporter travisConfig ingredients $ testGroup name tests
   where
     ingredients = [ includingOptions [Option (Proxy :: Proxy SlowTests)] ]

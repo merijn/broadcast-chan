@@ -1,5 +1,4 @@
 {-# OPTIONS_HADDOCK not-home #-}
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -33,9 +32,6 @@ module BroadcastChan.Extra
     , runParallelWith_
     ) where
 
-#if !MIN_VERSION_base(4,8,0)
-import Control.Applicative ((<*))
-#endif
 import Control.Concurrent (ThreadId, forkFinally, mkWeakThreadId, myThreadId)
 import Control.Concurrent.MVar
 import Control.Concurrent.QSem

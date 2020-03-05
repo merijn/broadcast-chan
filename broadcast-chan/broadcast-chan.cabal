@@ -91,8 +91,7 @@ Library
                         BroadcastChan.Throw
   Other-Modules:        BroadcastChan.Internal
 
-  Other-Extensions:     CPP
-                        DataKinds
+  Other-Extensions:     DataKinds
                         DeriveDataTypeable
                         KindSignatures
                         NamedFieldPuns
@@ -115,7 +114,6 @@ Benchmark sync
   Hs-Source-Dirs:       benchmarks
 
   Other-Extensions:     BangPatterns
-                        CPP
 
   if flag(sync)
     Buildable:          True
@@ -141,7 +139,6 @@ Benchmark channels
   Hs-Source-Dirs:       benchmarks
 
   Other-Extensions:     BangPatterns
-                        CPP
                         DeriveGeneric
                         RecordWildCards
 
@@ -151,9 +148,6 @@ Benchmark channels
                ,        criterion >= 1.2 && < 1.6
                ,        deepseq >= 1.1 && < 1.5
                ,        stm >= 2.4 && < 2.6
-
-  if impl(ghc < 7.10)
-    Build-Depends:      bifunctors >= 0.1 && < 5.6
 
 Benchmark utilities
   Default-Language:     Haskell2010

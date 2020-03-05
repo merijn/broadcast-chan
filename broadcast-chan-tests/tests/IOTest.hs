@@ -1,9 +1,4 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE CPP #-}
-#if !MIN_VERSION_base(4,8,0)
-import Control.Applicative ((<$>))
-import Data.Foldable (Foldable(..))
-#endif
 
 import Control.Monad (void)
 import Data.Foldable (forM_, foldlM)

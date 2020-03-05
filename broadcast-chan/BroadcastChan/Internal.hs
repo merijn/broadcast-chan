@@ -1,12 +1,8 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE Trustworthy #-}
 module BroadcastChan.Internal where
 
-#if !MIN_VERSION_base(4,8,0)
-import Control.Applicative ((<*))
-#endif
 import Control.Concurrent.MVar
 import Control.Exception (mask_)
 import Control.Monad ((>=>))
@@ -67,19 +63,9 @@ closeBChan (BChan writeVar) = liftIO . mask_ $ do
 --      @True@ indicates the channel is both closed and empty, meaning reads
 --      will always fail.
 isClosedBChan :: MonadIO m => BroadcastChan dir a -> m Bool
-#if MIN_VERSION_base(4,7,0)
 isClosedBChan (BChan mvar) = liftIO $ do
     old_hole <- readMVar mvar
     val <- tryReadMVar old_hole
-#else
-isClosedBChan (BChan mvar) = liftIO . mask_ $ do
-    old_hole <- takeMVar mvar
-    val <- tryTakeMVar old_hole
-    case val of
-        Just x -> putMVar old_hole x
-        Nothing -> return ()
-    putMVar mvar old_hole
-#endif
     case val of
         Just Closed -> return True
         _ -> return False

@@ -1,15 +1,10 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RecordWildCards #-}
 import Criterion.Main
 
 import Control.Applicative ((<$>))
-#if __GLASGOW_HASKELL__ > 704
 import Control.Concurrent (setNumCapabilities)
-#else
-import GHC.Conc (setNumCapabilities)
-#endif
 import Control.Concurrent.Async
 import BroadcastChan
 import qualified BroadcastChan.Throw as Throw
