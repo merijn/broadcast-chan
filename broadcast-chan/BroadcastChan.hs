@@ -83,7 +83,8 @@ module BroadcastChan (
 import Control.Exception
     (SomeException(..), mask, throwIO, try, uninterruptibleMask_)
 import Control.Monad (liftM)
-import Control.Monad.IO.Unlift (MonadUnliftIO(..), UnliftIO(..))
+import Control.Monad.IO.Unlift
+    (MonadUnliftIO, UnliftIO(..), askUnliftIO, withRunInIO)
 import Data.Foldable as F (Foldable(..), foldlM, forM_)
 
 import BroadcastChan.Extra

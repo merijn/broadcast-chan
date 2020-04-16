@@ -1,3 +1,7 @@
+0.2.1.1 [2020.03.05]
+--------------------
+* Updated imports to support `unliftio-core` 0.2.x
+
 0.2.1 [2019.11.17]
 ------------------
 * Fix resource management bug resulting from using `MonadUnliftIO` to run

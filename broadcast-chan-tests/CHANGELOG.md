@@ -1,3 +1,7 @@
+0.2.1.1 [2020.03.05]
+--------------------
+* Bump for new release of broadcast-chan.
+
 0.2.1 [2019.11.17]
 ------------------
 * Bump for new release of broadcast-chan.

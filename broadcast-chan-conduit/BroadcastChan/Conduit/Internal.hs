@@ -8,7 +8,7 @@ import Control.Monad.Trans.Resource (MonadResource)
 import qualified Control.Monad.Trans.Resource as Resource
 import qualified Control.Monad.Trans.Resource.Internal as ResourceI
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.IO.Unlift (MonadUnliftIO(askUnliftIO), UnliftIO(..))
+import Control.Monad.IO.Unlift (MonadUnliftIO, UnliftIO(..), askUnliftIO)
 import Data.Acquire (ReleaseType(..), allocateAcquire, mkAcquireType)
 import Data.Conduit
 import qualified Data.Conduit.List as C
