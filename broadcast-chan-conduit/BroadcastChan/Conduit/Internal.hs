@@ -10,7 +10,7 @@ import qualified Control.Monad.Trans.Resource.Internal as ResourceI
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.IO.Unlift (MonadUnliftIO, UnliftIO(..), askUnliftIO)
 import Data.Acquire (ReleaseType(..), allocateAcquire, mkAcquireType)
-import Data.Conduit
+import Data.Conduit (ConduitM, (.|), awaitForever, yield)
 import qualified Data.Conduit.List as C
 import Data.Foldable (traverse_)
 import Data.Void (Void)

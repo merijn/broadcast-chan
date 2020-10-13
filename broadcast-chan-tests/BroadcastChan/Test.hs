@@ -4,7 +4,7 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  BroadcastChan.Test
--- Copyright   :  (C) 2014-2018 Merijn Verstraaten
+-- Copyright   :  (C) 2014-2020 Merijn Verstraaten
 -- License     :  BSD-style (see the file LICENSE)
 -- Maintainer  :  Merijn Verstraaten <merijn@inconsistent.nl>
 -- Stability   :  experimental
@@ -39,7 +39,6 @@ import qualified Data.IntSet as IS
 import Data.List (sort)
 import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Monoid ((<>), mconcat)
 import Data.Proxy (Proxy(Proxy))
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -193,7 +192,7 @@ nonDeterministicGolden label controlAction testAction =
 
     diff :: (r, Text) -> (r, Text) -> IO (Maybe String)
     diff (controlResult, controlOutput) (testResult, testOutput) =
-        return $ resultDiff <> outputDiff
+        return $ resultDiff `mappend` outputDiff
       where
         resultDiff :: Maybe String
         resultDiff
@@ -291,12 +290,10 @@ instance IsOption SlowTests where
   parseValue = fmap SlowTests . safeRead
   optionName = return "slow-tests"
   optionHelp = return "Run slow tests."
-  optionCLParser =
-    fmap SlowTests $
-    switch
-      (  long (untag (optionName :: Tagged SlowTests String))
-      <> help (untag (optionHelp :: Tagged SlowTests String))
-      )
+  optionCLParser = fmap SlowTests . switch $ mconcat
+      [ long (untag (optionName :: Tagged SlowTests String))
+      , help (untag (optionHelp :: Tagged SlowTests String))
+      ]
 
 -- | Takes a name, a sequential sink, and a parallel sink and generates tasty
 -- tests from these.
