@@ -34,7 +34,7 @@ Library
                         ScopedTypeVariables
                         Trustworthy
 
-  Build-Depends:        base >= 4.7 && < 4.15
+  Build-Depends:        base >= 4.8 && < 4.15
                ,        async >= 2.1 && < 2.3
                ,        broadcast-chan == 0.2.1.1
                ,        clock >= 0.7 && < 0.9
