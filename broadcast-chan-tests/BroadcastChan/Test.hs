@@ -26,7 +26,7 @@ module BroadcastChan.Test
     ) where
 
 import Prelude hiding (seq)
-import Control.Concurrent (threadDelay)
+import Control.Concurrent (setNumCapabilities, threadDelay)
 import Control.Concurrent.Async (wait, withAsync)
 import Control.Concurrent.MVar
 import Control.Concurrent.STM
@@ -337,6 +337,7 @@ genStreamTests name seq par = askOption $ \(SlowTests slow) ->
 -- | Run a list of 'TestTree'​'s and group them under the specified name.
 runTests :: String -> [TestTree] -> IO ()
 runTests name tests = do
+    setNumCapabilities 5
     setEnv "TASTY_NUM_THREADS" "100"
     travisTestReporter travisConfig ingredients $ testGroup name tests
   where
