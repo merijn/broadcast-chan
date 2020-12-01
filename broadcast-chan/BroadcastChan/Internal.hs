@@ -14,12 +14,12 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 data Direction = In  -- ^ Indicates a write 'BroadcastChan'
                | Out -- ^ Indicates a read 'BroadcastChan'
 
--- | Alias for the 'In' type from the 'Direction' kind, allows users to write
--- the @'BroadcastChan' 'In' a@ type without enabling @DataKinds@.
+-- | Alias for the v'In' type from the 'Direction' kind, allows users to write
+-- the @'BroadcastChan' v'In' a@ type without enabling @DataKinds@.
 type In = 'In
 
--- | Alias for the 'Out' type from the 'Direction' kind, allows users to write
--- the @'BroadcastChan' 'Out' a@ type without enabling @DataKinds@.
+-- | Alias for the v'Out' type from the 'Direction' kind, allows users to write
+-- the @'BroadcastChan' v'Out' a@ type without enabling @DataKinds@.
 type Out = 'Out
 
 -- | The abstract type representing the read or write end of a 'BroadcastChan'.
@@ -49,7 +49,7 @@ closeBChan (BChan writeVar) = liftIO . mask_ $ do
 -- | Check whether a 'BroadcastChan' is closed. 'True' meaning that future
 -- read/write operations on the channel will always fail.
 --
---  ['BroadcastChan' 'In':]:
+--  ['BroadcastChan' v'In':]:
 --
 --      @True@ indicates the channel is closed and writes will always fail.
 --
@@ -58,7 +58,7 @@ closeBChan (BChan writeVar) = liftIO . mask_ $ do
 --      a 'closeBChan' from another thread can result in the channel being
 --      closed right after 'isClosedBChan' returns.
 --
---  ['BroadcastChan' 'Out':]:
+--  ['BroadcastChan' v'Out':]:
 --
 --      @True@ indicates the channel is both closed and empty, meaning reads
 --      will always fail.
@@ -116,12 +116,12 @@ readBChan (BChan readVar) = liftIO $ do
 
 -- | Create a new read end for a 'BroadcastChan'.
 --
---  ['BroadcastChan' 'In':]:
+--  ['BroadcastChan' v'In':]:
 --
 --      Will receive all messages written to the channel __after__ this read
 --      end is created.
 --
---  ['BroadcastChan' 'Out':]:
+--  ['BroadcastChan' v'Out':]:
 --
 --      Will receive all currently unread messages and all future messages.
 newBChanListener :: MonadIO m => BroadcastChan dir a -> m (BroadcastChan Out a)
@@ -134,12 +134,12 @@ newBChanListener (BChan mvar) = liftIO $ do
 --
 -- Uses 'unsafeInterleaveIO' to defer the IO operations.
 --
---  ['BroadcastChan' 'In':]:
+--  ['BroadcastChan' v'In':]:
 --
 --      The list contains every message written to the channel after this 'IO'
 --      action completes.
 --
---  ['BroadcastChan' 'Out':]:
+--  ['BroadcastChan' v'Out':]:
 --
 --      The list contains every currently unread message and all future
 --      messages. It's safe to keep using the original channel in any thread.
@@ -170,11 +170,11 @@ getBChanContents = newBChanListener >=> go
 -- completes when the channel is closed and exhausted. The outer action
 -- controls from when on messages are received. Specifically:
 --
---  ['BroadcastChan' 'In':]:
+--  ['BroadcastChan' v'In':]:
 --
 --      Will process all messages sent after the outer action completes.
 --
---  ['BroadcastChan' 'Out':]:
+--  ['BroadcastChan' v'Out':]:
 --
 --      Will process all messages that are unread when the outer action
 --      completes, as well as all future messages.
