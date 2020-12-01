@@ -83,7 +83,7 @@ Flag threaded
 
 Library
   Default-Language:     Haskell2010
-  GHC-Options:          -Wall -O2 -fno-warn-unused-do-bind
+  GHC-Options:          -Wall -O2 -Wno-unused-do-bind
 
   Exposed-Modules:      BroadcastChan
                         BroadcastChan.Extra
@@ -108,9 +108,9 @@ Benchmark sync
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
   Main-Is:              Sync.hs
-  GHC-Options:          -Wall -O2 -fno-warn-orphans -rtsopts
+  GHC-Options:          -Wall -O2 -Wno-orphans -rtsopts
   if flag(threaded)
-    GHC-Options:        -threaded
+    GHC-Options:        -threaded -with-rtsopts=-qg
   Hs-Source-Dirs:       benchmarks
 
   Other-Extensions:     BangPatterns
@@ -131,10 +131,10 @@ Benchmark channels
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
   Main-Is:              Channels.hs
-  GHC-Options:          -Wall -O2 -fno-warn-orphans -fno-warn-unused-do-bind
-                        -fno-warn-type-defaults -rtsopts
+  GHC-Options:          -Wall -O2 -Wno-orphans -Wno-unused-do-bind
+                        -Wno-type-defaults -rtsopts
   if flag(threaded)
-    GHC-Options:        -threaded
+    GHC-Options:        -threaded -with-rtsopts=-qg
 
   Hs-Source-Dirs:       benchmarks
 
@@ -153,10 +153,10 @@ Benchmark utilities
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
   Main-Is:              Utils.hs
-  GHC-Options:          -Wall -O2 -fno-warn-orphans -fno-warn-unused-do-bind
+  GHC-Options:          -Wall -O2 -Wno-orphans -Wno-nused-do-bind
                         -rtsopts
   if flag(threaded)
-    GHC-Options:        -threaded
+    GHC-Options:        -threaded -with-rtsopts=-qg
   Hs-Source-Dirs:       benchmarks
 
   Build-Depends:        base

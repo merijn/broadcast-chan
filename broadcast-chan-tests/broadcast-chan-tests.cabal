@@ -27,7 +27,7 @@ Description:
 
 Library
   Default-Language:     Haskell2010
-  GHC-Options:          -Wall -O2 -fno-warn-unused-do-bind
+  GHC-Options:          -Wall -O2 -Wno-unused-do-bind
   Exposed-Modules:      BroadcastChan.Test
 
   Other-Extensions:     DeriveDataTypeable
@@ -57,7 +57,7 @@ Test-Suite basic
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
   Main-Is:              Basic.hs
-  GHC-Options:          -Wall -threaded -fno-warn-unused-do-bind
+  GHC-Options:          -Wall -threaded -Wno-unused-do-bind -with-rtsopts=-qg
   Hs-Source-Dirs:       tests
   Build-Depends:        base
                ,        broadcast-chan
@@ -70,7 +70,7 @@ Test-Suite basic-unthreaded
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
   Main-Is:              Basic.hs
-  GHC-Options:          -Wall -fno-warn-unused-do-bind
+  GHC-Options:          -Wall -Wno-unused-do-bind -with-rtsopts=-qg
   Hs-Source-Dirs:       tests
   Build-Depends:        base
                ,        broadcast-chan
@@ -83,7 +83,7 @@ Test-Suite parallel-io
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
   Main-Is:              IOTest.hs
-  GHC-Options:          -Wall -O2 -fno-warn-unused-do-bind
+  GHC-Options:          -Wall -O2 -Wno-unused-do-bind -with-rtsopts=-qg
   Hs-Source-Dirs:       tests
   Build-Depends:        base
                ,        broadcast-chan
