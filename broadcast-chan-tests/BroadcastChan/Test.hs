@@ -26,9 +26,10 @@ module BroadcastChan.Test
     ) where
 
 import Prelude hiding (seq)
-import Control.Concurrent (setNumCapabilities, threadDelay)
+import Control.Concurrent (forkIO, setNumCapabilities, threadDelay)
 import Control.Concurrent.Async (wait, withAsync)
 import Control.Concurrent.MVar
+import Control.Concurrent.QSemN
 import Control.Concurrent.STM
 import Control.Monad (void, when)
 import Control.Monad.IO.Class (MonadIO(liftIO))
@@ -97,6 +98,14 @@ doDrop :: Show a => (a -> Bool) -> Handle -> a -> IO a
 doDrop predicate hnd val
     | predicate val = throwIO TestException
     | otherwise = doPrint hnd val
+
+doRace :: MVar () -> QSemN -> a -> IO a
+doRace mvar sem _ = do
+    result <- tryReadMVar mvar
+    case result of
+        Nothing -> signalQSemN sem 1 >> readMVar mvar
+        Just () -> return ()
+    throwIO TestException
 
 fromTimeSpec :: Fractional n => TimeSpec -> n
 fromTimeSpec = fromIntegral . toNanoSecs
@@ -247,6 +256,20 @@ terminationTest parImpl = testCase "termination" $
         withSystemTempFile "terminate.out" $ \_ hndl ->
             parImpl (Simple Terminate) [1..100] (doDrop even hndl) 4
 
+raceTest
+    :: (Handler IO Int -> [Int] -> (Int -> IO Int) -> Int -> IO r) -> TestTree
+raceTest parImpl = testCase "race" $
+    expect TestException . void $ do
+        sem <- newQSemN 0
+        mvar <- newEmptyMVar
+        forkIO $ do
+            waitQSemN sem parCount
+            putMVar mvar ()
+        parImpl (Simple Terminate) [1..100] (doRace mvar sem) parCount
+  where
+    parCount :: Int
+    parCount = 4
+
 retryTest
     :: (Eq r, Show r)
     => ([Int] -> (Int -> IO Int) -> IO r)
@@ -321,7 +344,7 @@ genStreamTests name seq par = askOption $ \(SlowTests slow) ->
         bigInputs | slow = derivedParam (enumFromTo 0) "inputs" [600]
                   | otherwise = derivedParam (enumFromTo 0) "inputs" [300]
         smallInputs = derivedParam (enumFromTo 0) "inputs" [0,1,2]
-        pause = simpleParam "pause" [10^(5 :: Int)]
+        pause = simpleParam "pause" [10^(4 :: Int)]
 
     in testGroup name
         [ testTree "output" (outputTest seq (par term)) $
@@ -329,7 +352,11 @@ genStreamTests name seq par = askOption $ \(SlowTests slow) ->
         , testTree "speedup" (speedupTest getCache seq (par term)) $
             threads . bigInputs . pause
         , testGroup "exceptions"
-            [ dropTest seq par, terminationTest par, retryTest seq par ]
+            [ dropTest seq par
+            , terminationTest par
+            , raceTest par
+            , retryTest seq par
+            ]
         ]
   where
     term = Simple Terminate
