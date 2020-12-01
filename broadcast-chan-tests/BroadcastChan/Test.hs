@@ -45,7 +45,7 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Tagged (Tagged, untag)
 import Data.Typeable (Typeable)
-import Options.Applicative (switch, long, help)
+import Options.Applicative (flag', long, help)
 import System.Clock
     (Clock(Monotonic), TimeSpec, diffTimeSpec, getTime, toNanoSecs)
 import System.Environment (setEnv)
@@ -290,7 +290,7 @@ instance IsOption SlowTests where
   parseValue = fmap SlowTests . safeRead
   optionName = return "slow-tests"
   optionHelp = return "Run slow tests."
-  optionCLParser = fmap SlowTests . switch $ mconcat
+  optionCLParser = flag' (SlowTests True) $ mconcat
       [ long (untag (optionName :: Tagged SlowTests String))
       , help (untag (optionHelp :: Tagged SlowTests String))
       ]
