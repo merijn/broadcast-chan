@@ -1,0 +1,24 @@
+-- --ghc-options for local packages
+local-ghc-options: -Wcompat -Werror
+
+-- Project name (used for IRC notifications), defaults to package name or name of first package listed in cabal.project file
+project-name: broadcast-chan
+
+-- Build steps to fold
+folds:  sdist
+        unpack
+        build
+        build-installed
+        build-everything
+        haddock
+        stackage
+        check
+        doctest
+        hlint
+        constraint-sets
+
+-- Add ghc-head job
+ghc-head: True
+
+-- Jobs to additionally build with OSX
+macos-jobs: True
