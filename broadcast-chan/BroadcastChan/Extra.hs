@@ -150,6 +150,7 @@ parallelCore hndl threads onDrop threadBracket f = liftIO $ do
     inChanOut <- newBChanListener inChanIn
     shutdownSem <- newQSemN 0
     endSem <- newQSemN 0
+    excMVar <- newMVar (Exc.throwTo originTid)
 
     let bufferValue :: a -> IO ()
         bufferValue = void . writeBChan inChanIn
@@ -183,8 +184,12 @@ parallelCore hndl threads onDrop threadBracket f = liftIO $ do
                 case exit of
                     Left exc
                       | Just Shutdown <- fromException exc -> cleanupForkError
-                      | otherwise ->
-                          Exc.throwTo originTid exc `Exc.catch` shutdownHandler
+                      | otherwise -> do
+                          cleanupForkError
+                          reportErr <- tryTakeMVar excMVar
+                          case reportErr of
+                              Nothing -> return ()
+                              Just throw -> throw exc `Exc.catch` shutdownHandler
                     Right () -> cleanupFork
 
             mkWeakThreadId tid
