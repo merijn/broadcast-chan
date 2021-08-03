@@ -45,6 +45,7 @@ module BroadcastChan.Throw
     ) where
 
 import Control.Monad (when)
+import Control.Monad.IO.Unlift (MonadIO(..))
 import Control.Exception (Exception, throwIO)
 import Data.Typeable (Typeable)
 
@@ -61,18 +62,18 @@ instance Exception BChanError
 
 -- | Like 'Internal.readBChan', but throws a 'ReadFailed' exception when
 -- reading from a closed and empty 'BroadcastChan'.
-readBChan :: BroadcastChan Out a -> IO a
+readBChan :: MonadIO m => BroadcastChan Out a -> m a
 readBChan ch = do
     result <- Internal.readBChan ch
     case result of
-        Nothing -> throwIO ReadFailed
+        Nothing -> liftIO $ throwIO ReadFailed
         Just x -> return x
 {-# INLINE readBChan #-}
 
 -- | Like 'Internal.writeBChan', but throws a 'WriteFailed' exception when
 -- writing to closed 'BroadcastChan'.
-writeBChan :: BroadcastChan In a -> a -> IO ()
+writeBChan :: MonadIO m => BroadcastChan In a -> a -> m ()
 writeBChan ch val = do
     success <- Internal.writeBChan ch val
-    when (not success) $ throwIO WriteFailed
+    when (not success) . liftIO $ throwIO WriteFailed
 {-# INLINE writeBChan #-}

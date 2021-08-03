@@ -1,6 +1,12 @@
+0.3.0 [????.??.??]
+------------------
+* Fixed Haddock links.
+* Generalised `readBChan`/`writeBChan` in `BroadcastChan.Throw` to use
+  `MonadIO`.
+
 0.2.1.1 [2020.03.05]
 --------------------
-* Updated imports to support `unliftio-core` 0.2.x
+* Updated imports to support `unliftio-core` 0.2.x.
 
 0.2.1 [2019.11.17]
 ------------------

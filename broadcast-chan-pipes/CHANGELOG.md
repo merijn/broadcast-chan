@@ -1,3 +1,8 @@
+0.3.0 [????.??.??]
+------------------
+* Add missing reexports of `readBChan`, `writeBChan`, and `BChanError` to
+  `BroadcastChan.Pipes` and `BroadcastChan.Pipes.Throw`.
+
 0.2.1 [2019.11.17]
 ------------------
 * Bump for new broadcast-chan release.

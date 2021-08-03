@@ -27,6 +27,8 @@ module BroadcastChan.Conduit
     , newBroadcastChan
     , newBChanListener
     -- ** Basic Operations
+    , readBChan
+    , writeBChan
     , closeBChan
     , isClosedBChan
     , getBChanContents

@@ -1,3 +1,8 @@
+0.3.0 [????.??.??]
+------------------
+* Add missing reexports of `readBChan`, `writeBChan`, and `BChanError` to
+  `BroadcastChan.Pipes` and `BroadcastChan.Pipes.Throw`.
+
 0.2.1.1 [2020.03.05]
 --------------------
 * Updated imports to support `unliftio-core` 0.2.x

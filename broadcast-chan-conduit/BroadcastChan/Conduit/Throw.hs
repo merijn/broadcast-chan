@@ -23,10 +23,13 @@ module BroadcastChan.Conduit.Throw
     , Direction(..)
     , In
     , Out
+    , BChanError(..)
     -- ** Construction
     , newBroadcastChan
     , newBChanListener
     -- ** Basic Operations
+    , readBChan
+    , writeBChan
     , closeBChan
     , isClosedBChan
     , getBChanContents
