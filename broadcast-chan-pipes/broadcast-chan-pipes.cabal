@@ -35,7 +35,7 @@ Library
                         Safe
                         ScopedTypeVariables
 
-  Build-Depends:        base >= 4.8 && < 4.15
+  Build-Depends:        base >= 4.8 && < 4.17
                ,        broadcast-chan == 0.3.0.*
                ,        pipes >= 4.1.6 && < 4.4
                ,        pipes-safe >= 2.2 && < 2.4
