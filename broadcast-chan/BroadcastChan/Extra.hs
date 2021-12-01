@@ -38,7 +38,7 @@ import Control.Concurrent.QSem
 import Control.Concurrent.QSemN
 import Control.Exception (Exception(..), SomeException(..), bracketOnError)
 import qualified Control.Exception as Exc
-import Control.Monad ((>=>), replicateM, void)
+import Control.Monad ((>=>), join, replicateM, void)
 import Control.Monad.Trans.Cont (ContT(..))
 import Control.Monad.IO.Unlift (MonadIO(..))
 import Data.Typeable (Typeable)
@@ -301,7 +301,7 @@ runParallelWith threadBracket yielder hndl threads work pipe = do
 
     let queueAndYield :: a -> m (Maybe b)
         queueAndYield x = do
-            ~(Just v) <- liftIO $ readBChan outChanOut <* bufferValue x
+            v <- join <$> liftIO (readBChan outChanOut <* bufferValue x)
             return v
 
         finish :: r -> n r
