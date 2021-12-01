@@ -6,7 +6,7 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  BroadcastChan.Extra
--- Copyright   :  (C) 2014-2020 Merijn Verstraaten
+-- Copyright   :  (C) 2014-2021 Merijn Verstraaten
 -- License     :  BSD-style (see the file LICENSE)
 -- Maintainer  :  Merijn Verstraaten <merijn@inconsistent.nl>
 -- Stability   :  experimental
