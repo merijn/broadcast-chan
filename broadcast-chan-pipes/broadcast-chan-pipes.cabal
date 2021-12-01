@@ -15,7 +15,7 @@ License-File:       LICENSE
 Category:           System
 Build-Type:         Simple
 Tested-With:        GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.4, GHC == 8.6.5,
-                    GHC == 8.8.4, GHC == 8.10.2
+                    GHC == 8.8.4, GHC == 8.10.7, GHC == 9.0.1, GHC == 9.2.1
 
 Synopsis:           Pipes-based parallel streaming code for broadcast-chan
 
@@ -35,7 +35,7 @@ Library
                         Safe
                         ScopedTypeVariables
 
-  Build-Depends:        base >= 4.8 && < 4.15
+  Build-Depends:        base >= 4.8 && < 4.17
                ,        broadcast-chan == 0.2.1.*
                ,        pipes >= 4.1.6 && < 4.4
                ,        pipes-safe >= 2.2 && < 2.4
