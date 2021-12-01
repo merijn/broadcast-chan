@@ -1,3 +1,4 @@
+Cabal-Version:      2.2
 Name:               broadcast-chan
 Version:            0.2.1.1
 
@@ -8,11 +9,10 @@ Author:             Merijn Verstraaten
 Maintainer:         Merijn Verstraaten <merijn@inconsistent.nl>
 Copyright:          Copyright © 2014-2020 Merijn Verstraaten
 
-License:            BSD3
+License:            BSD-3-Clause
 License-File:       LICENSE
 
 Category:           System
-Cabal-Version:      >= 1.10
 Build-Type:         Simple
 Tested-With:        GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.4, GHC == 8.6.5,
                     GHC == 8.8.4, GHC == 8.10.2
@@ -104,50 +104,44 @@ Library
                ,        transformers >= 0.2 && < 0.6
                ,        unliftio-core >= 0.1.1 && < 0.3
 
-Benchmark sync
+Common concurrent-benchmarks
   Default-Language:     Haskell2010
-  Type:                 exitcode-stdio-1.0
-  Main-Is:              Sync.hs
+
   GHC-Options:          -Wall -O2 -Wno-orphans -rtsopts
   if flag(threaded)
     GHC-Options:        -threaded -with-rtsopts=-qg
+
   Hs-Source-Dirs:       benchmarks
 
   Other-Extensions:     BangPatterns
 
+  Build-Depends:        base
+               ,        async >= 2.0 && < 2.3
+               ,        criterion >= 1.2 && < 1.6
+               ,        deepseq >= 1.1 && < 1.5
+               ,        stm >= 2.4 && < 2.6
+
+Benchmark sync
+  Import:               concurrent-benchmarks
+  Type:                 exitcode-stdio-1.0
+  Main-Is:              Sync.hs
   if flag(sync)
     Buildable:          True
   else
     Buildable:          False
 
-  Build-Depends:        base
-               ,        async >= 2.0 && < 2.3
-               ,        atomic-primops == 0.8.*
-               ,        criterion >= 1.2 && < 1.6
-               ,        deepseq >= 1.1 && < 1.5
-               ,        stm >= 2.4 && < 2.6
+  Build-Depends:        atomic-primops == 0.8.*
 
 Benchmark channels
-  Default-Language:     Haskell2010
+  Import:               concurrent-benchmarks
   Type:                 exitcode-stdio-1.0
   Main-Is:              Channels.hs
-  GHC-Options:          -Wall -O2 -Wno-orphans -Wno-unused-do-bind
-                        -Wno-type-defaults -rtsopts
-  if flag(threaded)
-    GHC-Options:        -threaded -with-rtsopts=-qg
+  GHC-Options:          -Wno-unused-do-bind -Wno-type-defaults
 
-  Hs-Source-Dirs:       benchmarks
-
-  Other-Extensions:     BangPatterns
-                        DeriveGeneric
+  Other-Extensions:     DeriveGeneric
                         RecordWildCards
 
-  Build-Depends:        base
-               ,        broadcast-chan
-               ,        async >= 2.0 && < 2.3
-               ,        criterion >= 1.2 && < 1.6
-               ,        deepseq >= 1.1 && < 1.5
-               ,        stm >= 2.4 && < 2.6
+  Build-Depends:        broadcast-chan
 
 Benchmark utilities
   Default-Language:     Haskell2010

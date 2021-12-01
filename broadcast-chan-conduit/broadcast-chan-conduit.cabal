@@ -1,3 +1,4 @@
+Cabal-Version:      2.2
 Name:               broadcast-chan-conduit
 Version:            0.2.1.1
 
@@ -8,11 +9,10 @@ Author:             Merijn Verstraaten
 Maintainer:         Merijn Verstraaten <merijn@inconsistent.nl>
 Copyright:          Copyright © 2014-2020 Merijn Verstraaten
 
-License:            BSD3
+License:            BSD-3-Clause
 License-File:       LICENSE
 
 Category:           System
-Cabal-Version:      >= 1.10
 Build-Type:         Simple
 Tested-With:        GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.4, GHC == 8.6.5,
                     GHC == 8.8.4, GHC == 8.10.2
