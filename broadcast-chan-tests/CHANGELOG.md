@@ -1,3 +1,7 @@
+0.2.1.2 [2021.12.01]
+--------------------
+* Fix errors/warnings for GHC 9.2.
+
 0.2.1.1 [2020.03.05]
 --------------------
 * Bump for new release of broadcast-chan.

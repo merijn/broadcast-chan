@@ -1,3 +1,9 @@
+0.2.1.2 [2021.12.01]
+--------------------
+* Updated bounds for GHC 9.0 and 9.2.
+* Tighten bound on broadcast-chan to only use version with fixed race
+  condition.
+
 0.2.1.1 [2020.03.05]
 --------------------
 * Updated imports to support `unliftio-core` 0.2.x

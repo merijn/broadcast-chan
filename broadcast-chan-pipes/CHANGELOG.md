@@ -1,3 +1,9 @@
+0.2.1.1 [2021.12.01]
+--------------------
+* Updated bounds for GHC 9.0 and 9.2.
+* Tighten bound on broadcast-chan to only use version with fixed race
+  condition.
+
 0.2.1 [2019.11.17]
 ------------------
 * Bump for new broadcast-chan release.
