@@ -278,7 +278,7 @@ retryTest seqImpl parImpl = withRetryCheck $ \getRetryCheck ->
     dropAfterPrint checkPresence hnd val = do
         hPrint hnd val
         when (even val) $ do
-            isNotPresent <- checkPresence >>= ($val)
+            isNotPresent <- checkPresence >>= ($ val)
             when isNotPresent $ throwIO TestException
         return val
 
