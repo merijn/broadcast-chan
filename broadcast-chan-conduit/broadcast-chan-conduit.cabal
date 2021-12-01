@@ -1,3 +1,4 @@
+Cabal-Version:      2.2
 Name:               broadcast-chan-conduit
 Version:            0.3.0
 
@@ -6,16 +7,15 @@ Bug-Reports:        https://github.com/merijn/broadcast-chan/issues
 
 Author:             Merijn Verstraaten
 Maintainer:         Merijn Verstraaten <merijn@inconsistent.nl>
-Copyright:          Copyright © 2014-2020 Merijn Verstraaten
+Copyright:          Copyright © 2014-2021 Merijn Verstraaten
 
-License:            BSD3
+License:            BSD-3-Clause
 License-File:       LICENSE
 
 Category:           System
-Cabal-Version:      >= 1.10
 Build-Type:         Simple
 Tested-With:        GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.4, GHC == 8.6.5,
-                    GHC == 8.8.4, GHC == 8.10.2
+                    GHC == 8.8.4, GHC == 8.10.7, GHC == 9.0.1, GHC == 9.2.1
 
 Extra-Source-Files: CHANGELOG.md
 
@@ -38,11 +38,11 @@ Library
                         ScopedTypeVariables
                         Trustworthy
 
-  Build-Depends:        base >= 4.8 && < 4.15
+  Build-Depends:        base >= 4.8 && < 4.17
                ,        broadcast-chan == 0.3.0.*
                ,        conduit >= 1.2 && < 1.4
                ,        resourcet >= 1.1 && < 1.3
-               ,        transformers >= 0.2 && < 0.6
+               ,        transformers >= 0.2 && < 0.7
                ,        unliftio-core >= 0.1 && < 0.3
 
 Test-Suite conduit

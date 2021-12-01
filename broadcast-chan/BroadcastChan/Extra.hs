@@ -6,7 +6,7 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  BroadcastChan.Extra
--- Copyright   :  (C) 2014-2020 Merijn Verstraaten
+-- Copyright   :  (C) 2014-2021 Merijn Verstraaten
 -- License     :  BSD-style (see the file LICENSE)
 -- Maintainer  :  Merijn Verstraaten <merijn@inconsistent.nl>
 -- Stability   :  experimental
@@ -38,7 +38,7 @@ import Control.Concurrent.QSem
 import Control.Concurrent.QSemN
 import Control.Exception (Exception(..), SomeException(..), bracketOnError)
 import qualified Control.Exception as Exc
-import Control.Monad ((>=>), replicateM, void)
+import Control.Monad ((>=>), join, replicateM, void)
 import Control.Monad.Trans.Cont (ContT(..))
 import Control.Monad.IO.Unlift (MonadIO(..))
 import Data.Typeable (Typeable)
@@ -150,6 +150,7 @@ parallelCore hndl threads onDrop threadBracket f = liftIO $ do
     inChanOut <- newBChanListener inChanIn
     shutdownSem <- newQSemN 0
     endSem <- newQSemN 0
+    excMVar <- newMVar (Exc.throwTo originTid)
 
     let bufferValue :: a -> IO ()
         bufferValue = void . writeBChan inChanIn
@@ -183,8 +184,12 @@ parallelCore hndl threads onDrop threadBracket f = liftIO $ do
                 case exit of
                     Left exc
                       | Just Shutdown <- fromException exc -> cleanupForkError
-                      | otherwise ->
-                          Exc.throwTo originTid exc `Exc.catch` shutdownHandler
+                      | otherwise -> do
+                          cleanupForkError
+                          reportErr <- tryTakeMVar excMVar
+                          case reportErr of
+                              Nothing -> return ()
+                              Just throw -> throw exc `Exc.catch` shutdownHandler
                     Right () -> cleanupFork
 
             mkWeakThreadId tid
@@ -301,7 +306,7 @@ runParallelWith threadBracket yielder hndl threads work pipe = do
 
     let queueAndYield :: a -> m (Maybe b)
         queueAndYield x = do
-            ~(Just v) <- liftIO $ readBChan outChanOut <* bufferValue x
+            v <- join <$> liftIO (readBChan outChanOut <* bufferValue x)
             return v
 
         finish :: r -> n r
