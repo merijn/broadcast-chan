@@ -17,6 +17,8 @@ Build-Type:         Simple
 Tested-With:        GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.4, GHC == 8.6.5,
                     GHC == 8.8.4, GHC == 8.10.7, GHC == 9.0.1, GHC == 9.2.1
 
+Extra-Source-Files: CHANGELOG.md
+
 Synopsis:           Pipes-based parallel streaming code for broadcast-chan
 
 Description:
