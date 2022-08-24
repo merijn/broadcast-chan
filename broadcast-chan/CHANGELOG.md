@@ -4,6 +4,10 @@
 * Generalised `readBChan`/`writeBChan` in `BroadcastChan.Throw` to use
   `MonadIO`.
 
+0.2.1.2 [2022.08.24]
+--------------------
+* Revision updating bounds for GHC 9.4.
+
 0.2.1.2 [2021.12.01]
 --------------------
 * Update bounds for GHC 9.0 and 9.2.

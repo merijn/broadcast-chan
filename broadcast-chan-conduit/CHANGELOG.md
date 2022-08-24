@@ -3,6 +3,10 @@
 * Add missing reexports of `readBChan`, `writeBChan`, and `BChanError` to
   `BroadcastChan.Pipes` and `BroadcastChan.Pipes.Throw`.
 
+0.2.1.2 [2022.08.24]
+--------------------
+* Revision updating bounds for GHC 9.4.
+
 0.2.1.2 [2021.12.01]
 --------------------
 * Updated bounds for GHC 9.0 and 9.2.
