@@ -11,18 +11,26 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 
 -- | Used with DataKinds as phantom type indicating whether a 'BroadcastChan'
 -- value is a read or write end.
+--
+-- @since 0.2.0
 data Direction = In  -- ^ Indicates a write 'BroadcastChan'
                | Out -- ^ Indicates a read 'BroadcastChan'
 
 -- | Alias for the v'In' type from the 'Direction' kind, allows users to write
 -- the @'BroadcastChan' v'In' a@ type without enabling @DataKinds@.
+--
+-- @since 0.2.0
 type In = 'In
 
 -- | Alias for the v'Out' type from the 'Direction' kind, allows users to write
 -- the @'BroadcastChan' v'Out' a@ type without enabling @DataKinds@.
+--
+-- @since 0.2.0
 type Out = 'Out
 
 -- | The abstract type representing the read or write end of a 'BroadcastChan'.
+--
+-- @since 0.2.0
 newtype BroadcastChan (dir :: Direction) a = BChan (MVar (Stream a))
     deriving (Eq)
 
@@ -31,6 +39,8 @@ type Stream a = MVar (ChItem a)
 data ChItem a = ChItem a {-# UNPACK #-} !(Stream a) | Closed
 
 -- | Creates a new 'BroadcastChan' write end.
+--
+-- @since 0.2.0
 newBroadcastChan :: MonadIO m => m (BroadcastChan In a)
 newBroadcastChan = liftIO $ do
    hole  <- newEmptyMVar
@@ -40,6 +50,8 @@ newBroadcastChan = liftIO $ do
 -- | Close a 'BroadcastChan', disallowing further writes. Returns 'True' if the
 -- 'BroadcastChan' was closed. Returns 'False' if the 'BroadcastChan' was
 -- __already__ closed.
+--
+-- @since 0.2.0
 closeBChan :: MonadIO m => BroadcastChan In a -> m Bool
 closeBChan (BChan writeVar) = liftIO . mask_ $ do
     old_hole <- takeMVar writeVar
@@ -62,6 +74,8 @@ closeBChan (BChan writeVar) = liftIO . mask_ $ do
 --
 --      @True@ indicates the channel is both closed and empty, meaning reads
 --      will always fail.
+--
+-- @since 0.2.0
 isClosedBChan :: MonadIO m => BroadcastChan dir a -> m Bool
 isClosedBChan (BChan mvar) = liftIO $ do
     old_hole <- readMVar mvar
@@ -78,6 +92,8 @@ isClosedBChan (BChan mvar) = liftIO $ do
 -- message was written, 'False' is the channel is closed.
 -- See @BroadcastChan.Throw.@'BroadcastChan.Throw.writeBChan' for an
 -- exception throwing variant.
+--
+-- @since 0.2.0
 writeBChan :: MonadIO m => BroadcastChan In a -> a -> m Bool
 writeBChan (BChan writeVar) val = liftIO $ do
   new_hole <- newEmptyMVar
@@ -95,6 +111,8 @@ writeBChan (BChan writeVar) val = liftIO $ do
 -- 'Nothing' if the 'BroadcastChan' is closed and empty.
 -- See @BroadcastChan.Throw.@'BroadcastChan.Throw.readBChan' for an exception
 -- throwing variant.
+--
+-- @since 0.2.0
 readBChan :: MonadIO m => BroadcastChan Out a -> m (Maybe a)
 readBChan (BChan readVar) = liftIO $ do
   modifyMVarMasked readVar $ \read_end -> do -- Note [modifyMVarMasked]
@@ -124,6 +142,8 @@ readBChan (BChan readVar) = liftIO $ do
 --  ['BroadcastChan' v'Out':]:
 --
 --      Will receive all currently unread messages and all future messages.
+--
+-- @since 0.2.0
 newBChanListener :: MonadIO m => BroadcastChan dir a -> m (BroadcastChan Out a)
 newBChanListener (BChan mvar) = liftIO $ do
    hole       <- readMVar mvar
@@ -148,6 +168,8 @@ newBChanListener (BChan mvar) = liftIO $ do
 --      the list resulting from this function is __not__ affected by reads on
 --      the input channel. Every message that is unread or written after the
 --      'IO' action completes __will__ end up in the result list.
+--
+-- @since 0.2.0
 getBChanContents :: BroadcastChan dir a -> IO [a]
 getBChanContents = newBChanListener >=> go
   where
@@ -182,6 +204,8 @@ getBChanContents = newBChanListener >=> go
 --      After the outer action completes the fold is unaffected by other
 --      (concurrent) reads performed on the original channel. So it's safe to
 --      reuse the channel.
+--
+-- @since 0.2.0
 foldBChan
     :: (MonadIO m, MonadIO n)
     => (x -> a -> x)
@@ -206,6 +230,8 @@ foldBChan step begin done chan = do
 -- @"Control.Foldl".'Control.Foldl.impurely' 'foldBChanM' :: ('MonadIO' m, 'MonadIO' n) => 'Control.Foldl.FoldM' m a b -> 'BroadcastChan' d a -> n (m b)@
 --
 -- Has the same behaviour and guarantees as 'foldBChan'.
+--
+-- @since 0.2.0
 foldBChanM
     :: (MonadIO m, MonadIO n)
     => (x -> a -> m x)

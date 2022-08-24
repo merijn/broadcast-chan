@@ -5,7 +5,7 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  BroadcastChan
--- Copyright   :  (C) 2014-2021 Merijn Verstraaten
+-- Copyright   :  (C) 2014-2022 Merijn Verstraaten
 -- License     :  BSD-style (see the file LICENSE)
 -- Maintainer  :  Merijn Verstraaten <merijn@inconsistent.nl>
 -- Stability   :  experimental
@@ -104,6 +104,8 @@ bracketOnError before after thing = withRunInIO $ \run -> mask $ \restore -> do
 --
 -- This function does __NOT__ guarantee that elements are processed in a
 -- deterministic order!
+--
+-- @since 0.2.0
 parMapM_
     :: (F.Foldable f, MonadUnliftIO m)
     => Handler m a
@@ -131,6 +133,8 @@ parMapM_ hndl threads workFun input = do
 --
 -- This function does __NOT__ guarantee that elements are processed in a
 -- deterministic order!
+--
+-- @since 0.2.0
 parFoldMap
     :: (F.Foldable f, MonadUnliftIO m)
     => Handler m a
@@ -153,6 +157,8 @@ parFoldMap hndl threads work f =
 --
 -- This function does __NOT__ guarantee that elements are processed in a
 -- deterministic order!
+--
+-- @since 0.2.0
 parFoldMapM
     :: forall a b f m r
      . (F.Foldable f, MonadUnliftIO m)

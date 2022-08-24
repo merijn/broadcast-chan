@@ -3,7 +3,7 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  BroadcastChan.Throw
--- Copyright   :  (C) 2014-2021 Merijn Verstraaten
+-- Copyright   :  (C) 2014-2022 Merijn Verstraaten
 -- License     :  BSD-style (see the file LICENSE)
 -- Maintainer  :  Merijn Verstraaten <merijn@inconsistent.nl>
 -- Stability   :  experimental
@@ -53,6 +53,8 @@ import BroadcastChan hiding (writeBChan, readBChan)
 import qualified BroadcastChan as Internal
 
 -- | Exception type for 'BroadcastChan' operations.
+--
+-- @since 0.2.0
 data BChanError
     = WriteFailed   -- ^ Attempted to write to closed 'BroadcastChan'
     | ReadFailed    -- ^ Attempted to read from an empty closed 'BroadcastChan'
@@ -62,6 +64,8 @@ instance Exception BChanError
 
 -- | Like 'Internal.readBChan', but throws a 'ReadFailed' exception when
 -- reading from a closed and empty 'BroadcastChan'.
+--
+-- @since 0.2.0
 readBChan :: MonadIO m => BroadcastChan Out a -> m a
 readBChan ch = do
     result <- Internal.readBChan ch
@@ -72,6 +76,8 @@ readBChan ch = do
 
 -- | Like 'Internal.writeBChan', but throws a 'WriteFailed' exception when
 -- writing to closed 'BroadcastChan'.
+--
+-- @since 0.2.0
 writeBChan :: MonadIO m => BroadcastChan In a -> a -> m ()
 writeBChan ch val = do
     success <- Internal.writeBChan ch val

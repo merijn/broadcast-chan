@@ -6,7 +6,7 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  BroadcastChan.Extra
--- Copyright   :  (C) 2014-2021 Merijn Verstraaten
+-- Copyright   :  (C) 2014-2022 Merijn Verstraaten
 -- License     :  BSD-style (see the file LICENSE)
 -- Maintainer  :  Merijn Verstraaten <merijn@inconsistent.nl>
 -- Stability   :  experimental
@@ -70,6 +70,8 @@ data Shutdown = Shutdown deriving (Show, Typeable)
 instance Exception Shutdown
 
 -- | Action to take when an exception occurs while processing an element.
+--
+-- @since 0.2.0
 data Action
     = Drop
     -- ^ Drop the current element and continue processing.
@@ -81,6 +83,8 @@ data Action
     deriving (Eq, Show)
 
 -- | Exception handler for parallel processing.
+--
+-- @since 0.2.0
 data Handler m a
     = Simple Action
     -- ^ Always take the specified 'Action'.
@@ -90,6 +94,8 @@ data Handler m a
 
 -- | Allocation, cleanup, and work actions for parallel processing. These
 -- should be passed to an appropriate @bracketOnError@ function.
+--
+-- @since 0.2.0
 data BracketOnError m r
     = Bracket
     { allocate :: IO [Weak ThreadId]
@@ -129,6 +135,8 @@ noopBracket = ThreadBracket
     }
 
 -- | Convenience function for changing the monad the exception handler runs in.
+--
+-- @since 0.2.0
 mapHandler :: (m Action -> n Action) -> Handler m a -> Handler n a
 mapHandler _ (Simple act) = Simple act
 mapHandler mmorph (Handle f) = Handle $ \a exc -> mmorph (f a exc)
@@ -247,6 +255,8 @@ parallelCore hndl threads onDrop threadBracket f = liftIO $ do
 -- setting up 'Control.Concurrent.forkIO' threads and exception handlers. The
 -- 'cleanup' action ensures all threads are terminate in case of an exception.
 -- Finally, 'action' performs the actual parallel processing of elements.
+--
+-- @since 0.2.0
 runParallel
     :: forall a b m n r
      . (MonadIO m, MonadIO n)
@@ -344,6 +354,8 @@ runParallelWith threadBracket yielder hndl threads work pipe = do
 -- setting up 'Control.Concurrent.forkIO' threads and exception handlers. Th
 -- 'cleanup' action ensures all threads are terminate in case of an exception.
 -- Finally, 'action' performs the actual parallel processing of elements.
+--
+-- @since 0.2.0
 runParallel_
     :: (MonadIO m, MonadIO n)
     => Handler IO a

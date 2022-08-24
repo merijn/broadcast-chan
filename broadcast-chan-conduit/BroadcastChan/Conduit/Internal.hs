@@ -29,6 +29,8 @@ bracketOnError alloc clean work =
 --
 -- This function does __NOT__ guarantee that input elements are processed or
 -- output in a deterministic order!
+--
+-- @since 0.2.0
 parMapM
     :: (MonadResource m, MonadUnliftIO m)
     => Handler m a
@@ -69,6 +71,8 @@ parMapM hnd threads workFun = do
 --
 -- This function does __NOT__ guarantee that input elements are processed or
 -- output in a deterministic order!
+--
+-- @since 0.2.0
 parMapM_
     :: (MonadResource m, MonadUnliftIO m)
     => Handler m a

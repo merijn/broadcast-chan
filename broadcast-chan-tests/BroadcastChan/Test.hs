@@ -4,7 +4,7 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  BroadcastChan.Test
--- Copyright   :  (C) 2014-2021 Merijn Verstraaten
+-- Copyright   :  (C) 2014-2022 Merijn Verstraaten
 -- License     :  BSD-style (see the file LICENSE)
 -- Maintainer  :  Merijn Verstraaten <merijn@inconsistent.nl>
 -- Stability   :  experimental
@@ -68,11 +68,15 @@ instance Exception TestException
 infix 0 @?
 -- | Monomorphised version of 'Test.Tasty.HUnit.@?' to avoid ambiguous type
 -- errors when combined with predicates that are @MonadIO m => m Bool@.
+--
+-- @since 0.2.0
 (@?) :: IO Bool -> String -> Assertion
 (@?) = (HUnit.@?)
 
 -- | Test which fails if the expected exception is not thrown by the 'IO'
 -- action.
+--
+-- @since 0.2.0
 expect :: (Eq e, Exception e) => e -> IO () -> Assertion
 expect err act = do
     result <- try act
@@ -171,6 +175,8 @@ speedupTest getCache seqSink parSink n inputs pause name = testCase name $ do
 
 -- | Run an IO action while logging the output to a @Handle@. Returns the
 -- result and the logged output.
+--
+-- @since 0.2.0
 withLoggedOutput :: FilePath -> (Handle -> IO r) -> IO (r, Text)
 withLoggedOutput filename act = withSystemTempFile filename $ \_ hnd ->
   (,) <$> act hnd <*> rewindAndRead hnd
@@ -329,6 +335,8 @@ instance IsOption SlowTests where
 --
 -- Furthermore the parallel sink should take a number indicating how many
 -- concurrent consumers should be used.
+--
+-- @since 0.2.0
 genStreamTests
     :: (Eq r, Show r)
     => String -- ^ Name to group tests under
@@ -362,6 +370,8 @@ genStreamTests name seq par = askOption $ \(SlowTests slow) ->
     term = Simple Terminate
 
 -- | Run a list of 'TestTree'​'s and group them under the specified name.
+--
+-- @since 0.2.0
 runTests :: String -> [TestTree] -> IO ()
 runTests name tests = do
     setNumCapabilities 5

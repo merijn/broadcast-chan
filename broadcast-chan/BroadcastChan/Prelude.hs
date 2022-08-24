@@ -2,7 +2,7 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  BroadcastChan.Prelude
--- Copyright   :  (C) 2014-2021 Merijn Verstraaten
+-- Copyright   :  (C) 2014-2022 Merijn Verstraaten
 -- License     :  BSD-style (see the file LICENSE)
 -- Maintainer  :  Merijn Verstraaten <merijn@inconsistent.nl>
 -- Stability   :  experimental
@@ -22,11 +22,15 @@ import Control.Monad.IO.Unlift (MonadIO(..))
 import BroadcastChan
 
 -- | 'mapM_' with it's arguments flipped.
+--
+-- @since 0.2.1
 forM_ :: MonadIO m => BroadcastChan Out a -> (a -> m b) -> m ()
 forM_ = flip mapM_
 
 -- | Map a monadic function over the elements of a 'BroadcastChan', ignoring
--- the results.
+-- the results1
+--
+-- @since 0.2.1
 mapM_ :: MonadIO m => (a -> m b) -> BroadcastChan Out a -> m ()
 mapM_ f ch = do
     result <- liftIO $ readBChan ch

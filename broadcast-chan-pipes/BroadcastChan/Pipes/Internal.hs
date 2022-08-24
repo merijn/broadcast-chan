@@ -21,6 +21,8 @@ bracketOnError alloc clean =
 --
 -- This function does __NOT__ guarantee that input elements are processed or
 -- output in a deterministic order!
+--
+-- @since 0.2.0
 parMapM
     :: forall a b m
      . MonadSafe m
@@ -49,6 +51,8 @@ parMapM hndl i f prod = do
 --
 -- This function does __NOT__ guarantee that input elements are processed or
 -- output in a deterministic order!
+--
+-- @since 0.2.0
 parMapM_
     :: MonadSafe m
     => Handler IO a
