@@ -29,6 +29,7 @@ module BroadcastChan.Pipes.Throw
     , newBChanListener
     -- ** Basic Operations
     , readBChan
+    , tryReadBChan
     , writeBChan
     , closeBChan
     , isClosedBChan

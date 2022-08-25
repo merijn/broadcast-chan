@@ -124,6 +124,30 @@ readBChan (BChan readVar) = liftIO $ do
         Closed -> return (read_end, Nothing)
 {-# INLINE readBChan #-}
 
+-- | A non-blocking version of 'readBChan'. Returns immediately with 'Nothing'
+-- if the 'BroadcastChan' is empty.
+--
+-- The inner 'Maybe' value correspond to the return value of 'readBChan'. That
+-- is, 'Nothing' if the 'BroadcastChan' is closed and empty and 'Just'
+-- otherwise.
+--
+-- See @BroadcastChan.Throw.@'BroadcastChan.Throw.tryReadBChan' for an
+-- exception throwing variant.
+--
+-- @since 0.3.0
+tryReadBChan :: MonadIO m => BroadcastChan Out a -> m (Maybe (Maybe a))
+tryReadBChan (BChan readVar) = liftIO $ do
+  modifyMVarMasked readVar $ \read_end -> do -- Note [modifyMVarMasked]
+    -- Use tryReadMVar here, not tryTakeMVar,
+    -- else newBChanListener doesn't work
+    result <- tryReadMVar read_end
+    case result of
+        Nothing -> return (read_end, Nothing)
+        Just Closed -> return (read_end, Just Nothing)
+        Just (ChItem val new_read_end) ->
+            return (new_read_end, Just (Just val))
+{-# INLINE tryReadBChan #-}
+
 -- Note [modifyMVarMasked]
 -- This prevents a theoretical deadlock if an asynchronous exception
 -- happens during the readMVar while the MVar is empty.  In that case

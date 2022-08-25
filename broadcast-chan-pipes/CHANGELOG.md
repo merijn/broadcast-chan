@@ -2,6 +2,8 @@
 ------------------
 * Add missing reexports of `readBChan`, `writeBChan`, and `BChanError` to
   `BroadcastChan.Pipes` and `BroadcastChan.Pipes.Throw`.
+* Add reexports for the new `tryReadBChan` in `BroadcastChan.Pipes` and
+  `BroadcastChan.Pipes.Throw`.
 
 0.2.1.2 [2022.08.24]
 --------------------

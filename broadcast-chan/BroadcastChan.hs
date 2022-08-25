@@ -64,6 +64,7 @@ module BroadcastChan (
     , newBChanListener
     -- * Basic Operations
     , readBChan
+    , tryReadBChan
     , writeBChan
     , closeBChan
     , isClosedBChan

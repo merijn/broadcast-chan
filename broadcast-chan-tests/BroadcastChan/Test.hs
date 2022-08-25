@@ -77,7 +77,7 @@ infix 0 @?
 -- action.
 --
 -- @since 0.2.0
-expect :: (Eq e, Exception e) => e -> IO () -> Assertion
+expect :: (Eq e, Exception e) => e -> IO a -> Assertion
 expect err act = do
     result <- try act
     case result of

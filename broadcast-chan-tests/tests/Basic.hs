@@ -19,53 +19,101 @@ shouldn'tBlock act = do
         Nothing -> assertFailure "Shouldn't block!"
         Just a -> return a
 
+shouldBlock :: IO a -> IO Bool
+shouldBlock act = do
+    result <- timeout 2000000 act
+    case result of
+        Nothing -> return True
+        Just _ -> return False
+
 checkedWrite :: BroadcastChan In a -> a -> IO ()
 checkedWrite chan val = writeBChan chan val @? "Write shouldn't fail"
 
 randomList :: Int -> IO [Int]
 randomList n = take n . randoms <$> getStdGen
 
+data ChanContent b = ChanEmpty (IO b -> Assertion) | ChanNonEmpty (Int -> b)
+data ChanState = ChanOpen | ChanClosed
+
+readBoilerPlate
+    :: (Eq b, Show b)
+    => String
+    -> ChanState
+    -> ChanContent b
+    -> (BroadcastChan Out Int -> IO b)
+    -> TestTree
+readBoilerPlate name state content getResult = testCase name $ do
+    inChan <- newBroadcastChan
+    outChan <- newBChanListener inChan
+    val <- randomIO :: IO Int
+
+    let handleRead = case content of
+            ChanNonEmpty conv ->
+                (>>= assertEqual "Read should match write" (conv val))
+            ChanEmpty conv -> conv
+
+    case content of
+        ChanEmpty{} -> return ()
+        ChanNonEmpty{} -> Throw.writeBChan inChan val
+
+    case state of
+        ChanOpen -> return ()
+        ChanClosed -> () <$ closeBChan inChan
+
+    handleRead $ getResult outChan
+
 readTests :: TestTree
 readTests = testGroup "read tests"
-    [ readNonEmpty
-    , readNonEmptyThrow
-    , readEmptyClosed
-    , readEmptyClosedThrow
+    [ readBoilerPlate "read non-empty" ChanOpen nonEmpty $
+            shouldn'tBlock . readBChan
+    , readBoilerPlate "read non-empty (throw)" ChanOpen nonEmptyThrow $
+            shouldn'tBlock . Throw.readBChan
+    , readBoilerPlate "read non-empty closed" ChanClosed nonEmpty $
+            shouldn'tBlock . readBChan
+    , readBoilerPlate "read non-empty closed (throw)" ChanClosed nonEmptyThrow $
+            shouldn'tBlock . Throw.readBChan
+    , readBoilerPlate "read empty" ChanOpen emptyBlock $
+            shouldBlock . readBChan
+    , readBoilerPlate "read empty (throw)" ChanOpen emptyBlock $
+            shouldBlock . Throw.readBChan
+    , readBoilerPlate "read empty closed" ChanClosed emptyNonBlock $
+            fmap isNothing . shouldn'tBlock . readBChan
+    , readBoilerPlate "read empty closed (throw)" ChanClosed emptyThrow $
+            shouldn'tBlock . Throw.readBChan
     ]
   where
-    readNonEmpty :: TestTree
-    readNonEmpty = testCase "read non-empty" $ do
-        inChan <- newBroadcastChan
-        outChan <- newBChanListener inChan
-        val <- randomIO :: IO Int
+    nonEmpty = ChanNonEmpty Just
+    nonEmptyThrow = ChanNonEmpty id
+    emptyBlock = ChanEmpty $ (@? "Read should block")
+    emptyNonBlock = ChanEmpty $ (@? "Read shouldn't block")
+    emptyThrow = ChanEmpty $ expect ReadFailed
 
-        writeBChan inChan val
-        result <- shouldn'tBlock $ readBChan outChan
-        assertEqual "Read should match write" (Just val) result
-
-    readNonEmptyThrow :: TestTree
-    readNonEmptyThrow = testCase "read non-empty (throw)" $ do
-        inChan <- newBroadcastChan
-        outChan <- newBChanListener inChan
-        val <- randomIO :: IO Int
-
-        writeBChan inChan val
-        result <- shouldn'tBlock $ Throw.readBChan outChan
-        assertEqual "Read should match write" val result
-
-    readEmptyClosed :: TestTree
-    readEmptyClosed = testCase "read empty closed" $ do
-        inChan <- newBroadcastChan
-        outChan <- newBChanListener inChan
-        closeBChan inChan
-        isNothing <$> shouldn'tBlock (readBChan outChan) @? "Read should fail"
-
-    readEmptyClosedThrow :: TestTree
-    readEmptyClosedThrow = testCase "read empty closed (throw)" $ do
-        inChan <- newBroadcastChan
-        outChan <- newBChanListener inChan
-        closeBChan inChan
-        expect ReadFailed . shouldn'tBlock $ Throw.readBChan outChan
+tryReadTests :: TestTree
+tryReadTests = testGroup "try read tests"
+    [ readBoilerPlate "try read non-empty" ChanOpen nonEmpty $
+            shouldn'tBlock . tryReadBChan
+    , readBoilerPlate "try read non-empty (throw)" ChanOpen nonEmptyThrow $
+            shouldn'tBlock . Throw.tryReadBChan
+    , readBoilerPlate "try read non-empty closed" ChanClosed nonEmpty $
+            shouldn'tBlock . tryReadBChan
+    , readBoilerPlate "try read non-empty closed (throw)" ChanClosed nonEmptyThrow $
+            shouldn'tBlock . Throw.tryReadBChan
+    , readBoilerPlate "try read empty" ChanOpen empty $
+            shouldn'tBlock . tryReadBChan
+    , readBoilerPlate "try read empty (throw)" ChanOpen empty $
+            shouldn'tBlock . Throw.tryReadBChan
+    , readBoilerPlate "try read empty closed" ChanClosed emptyClosed $
+            shouldn'tBlock . tryReadBChan
+    , readBoilerPlate "try read empty closed (throw)" ChanClosed emptyThrow $
+            shouldn'tBlock . Throw.tryReadBChan
+    ]
+  where
+    nonEmpty = ChanNonEmpty $ Just . Just
+    nonEmptyThrow = ChanNonEmpty Just
+    empty = ChanEmpty $ (@? "Read shouldn't block") . fmap isNothing
+    emptyClosed = ChanEmpty $
+        (>>= assertEqual "Expect successful nothing" (Just Nothing))
+    emptyThrow = ChanEmpty $ expect ReadFailed
 
 writeTests :: TestTree
 writeTests = testGroup "write tests"
@@ -310,6 +358,7 @@ foldlTests = testGroup "foldl tests"
 main :: IO ()
 main = runTests "basic"
   [ readTests
+  , tryReadTests
   , writeTests
   , closedTests
   , chanContentsTests
