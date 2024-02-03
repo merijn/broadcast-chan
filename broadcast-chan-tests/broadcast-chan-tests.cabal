@@ -35,21 +35,21 @@ Library
                         ScopedTypeVariables
                         Trustworthy
 
-  Build-Depends:        base >= 4.8 && < 4.19
+  Build-Depends:        base >= 4.8 && < 4.20
                ,        async >= 2.1 && < 2.3
                ,        broadcast-chan == 0.3.0
                ,        clock >= 0.7 && < 0.9
-               ,        containers >= 0.4 && < 0.7
-               ,        optparse-applicative >= 0.12 && < 0.18
+               ,        containers >= 0.4 && < 0.8
+               ,        optparse-applicative >= 0.12 && < 0.19
                ,        paramtree >= 0.1.1 && < 0.2
                ,        stm >= 2.4 && < 2.6
                ,        tagged == 0.8.*
-               ,        tasty >= 0.11 && < 1.5
+               ,        tasty >= 0.11 && < 1.6
                ,        tasty-golden >= 2.0 && < 2.4
                ,        tasty-hunit >= 0.9 && < 0.11
                ,        tasty-travis >= 0.2 && < 0.3
                ,        temporary >= 1.2 && < 1.4
-               ,        text >= 1.0 && < 1.3 || ^>= 2.0
+               ,        text >= 1.0 && < 1.3 || ^>= 2.0 || ^>= 2.1
 
   if impl(ghc <= 7.10)
     Build-Depends:      transformers >= 0.2 && < 0.7
