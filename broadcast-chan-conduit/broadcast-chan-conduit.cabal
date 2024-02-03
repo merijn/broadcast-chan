@@ -39,7 +39,7 @@ Library
                         ScopedTypeVariables
                         Trustworthy
 
-  Build-Depends:        base >= 4.8 && < 4.19
+  Build-Depends:        base >= 4.8 && < 4.20
                ,        broadcast-chan == 0.3.0.*
                ,        conduit >= 1.2 && < 1.4
                ,        resourcet >= 1.1 && < 1.3
