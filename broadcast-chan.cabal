@@ -105,6 +105,28 @@ Library
                ,        transformers >= 0.2 && < 0.7
                ,        unliftio-core >= 0.1.1 && < 0.3
 
+Library conduit
+  Visibility:           public
+  Default-Language:     Haskell2010
+  GHC-Options:          -Wall -O2 -Wno-unused-do-bind
+  Exposed-Modules:      BroadcastChan.Conduit
+                        BroadcastChan.Conduit.Throw
+  Other-Modules:        BroadcastChan.Conduit.Internal
+
+  Hs-Source-Dirs:       conduit
+
+  Other-Extensions:     NamedFieldPuns
+                        Safe
+                        ScopedTypeVariables
+                        Trustworthy
+
+  Build-Depends:        base >= 4.8 && < 4.22
+               ,        broadcast-chan
+               ,        conduit >= 1.2 && < 1.4
+               ,        resourcet >= 1.1 && < 1.3
+               ,        transformers >= 0.2 && < 0.7
+               ,        unliftio-core >= 0.1 && < 0.3
+
 Library pipes
   Visibility:           public
   Default-Language:     Haskell2010
@@ -194,6 +216,19 @@ Test-Suite parallel-io-unthreaded
   Import:               parallel-io
   Type:                 exitcode-stdio-1.0
   Main-Is:              IOTest.hs
+
+Test-Suite conduit-test
+  Default-Language:     Haskell2010
+  Type:                 exitcode-stdio-1.0
+  Main-Is:              ConduitTest.hs
+  GHC-Options:          -Wall -Wno-unused-do-bind -threaded -with-rtsopts=-qg
+  Hs-Source-Dirs:       tests
+
+  Build-Depends:        base >= 4.8 && < 4.22
+               ,        broadcast-chan:conduit
+               ,        broadcast-chan:test
+               ,        containers >= 0.4 && < 0.9
+               ,        conduit >= 1.2 && < 1.4
 
 Test-Suite pipes-test
   Default-Language:     Haskell2010
