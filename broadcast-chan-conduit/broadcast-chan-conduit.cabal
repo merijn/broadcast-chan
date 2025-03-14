@@ -1,4 +1,4 @@
-Cabal-Version:      2.2
+Cabal-Version:      3.4
 Name:               broadcast-chan-conduit
 Version:            0.3.0
 
@@ -56,7 +56,7 @@ Test-Suite conduit
 
   Build-Depends:        base >= 4.8 && < 4.22
                ,        broadcast-chan-conduit
-               ,        broadcast-chan-tests
+               ,        broadcast-chan:test
                ,        containers >= 0.4 && < 0.9
                ,        conduit >= 1.2 && < 1.4
 

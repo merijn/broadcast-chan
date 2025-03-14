@@ -53,11 +53,11 @@ import System.Environment (setEnv)
 import System.IO (Handle, SeekMode(AbsoluteSeek), hPrint, hSeek)
 import System.IO.Temp (withSystemTempFile)
 import Test.Tasty
+import Test.Tasty.Ingredients.Basic (consoleTestReporter, listingTests)
 import Test.Tasty.Golden.Advanced (goldenTest)
 import Test.Tasty.HUnit hiding ((@?))
 import qualified Test.Tasty.HUnit as HUnit
 import Test.Tasty.Options
-import Test.Tasty.Travis
 
 import BroadcastChan.Extra (Action(..), Handler(..), mapHandler)
 import ParamTree
@@ -376,15 +376,13 @@ runTests :: String -> [TestTree] -> IO ()
 runTests name tests = do
     setNumCapabilities 5
     setEnv "TASTY_NUM_THREADS" "100"
-    travisTestReporter travisConfig ingredients $ testGroup name tests
+    defaultMainWithIngredients ingredients $ testGroup name tests
   where
-    ingredients = [ includingOptions [Option (Proxy :: Proxy SlowTests)] ]
-
-    travisConfig = defaultConfig
-      { travisFoldGroup = FoldMoreThan 1
-      , travisSummaryWhen = SummaryAlways
-      , travisTestOptions = setOption (SlowTests True)
-      }
+    ingredients =
+      [ includingOptions [Option (Proxy :: Proxy SlowTests)]
+      , listingTests
+      , consoleTestReporter
+      ]
 
 withTime :: IO a -> IO (a, TimeSpec)
 withTime act = do

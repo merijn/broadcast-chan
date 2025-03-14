@@ -1,4 +1,4 @@
-Cabal-Version:      2.2
+Cabal-Version:      3.4
 Name:               broadcast-chan-pipes
 Version:            0.3.0
 
@@ -52,7 +52,7 @@ Test-Suite pipes
   Hs-Source-Dirs:       tests
   Build-Depends:        base >= 4.8 && < 4.22
                ,        broadcast-chan-pipes
-               ,        broadcast-chan-tests
+               ,        broadcast-chan:test
                ,        containers >= 0.4 && < 0.9
                ,        foldl >= 1.0.4 && < 1.5
                ,        pipes >= 4.1.6 && < 4.4
