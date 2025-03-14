@@ -7,7 +7,7 @@ Bug-Reports:        https://github.com/merijn/broadcast-chan/issues
 
 Author:             Merijn Verstraaten
 Maintainer:         Merijn Verstraaten <merijn@inconsistent.nl>
-Copyright:          Copyright © 2014-2023 Merijn Verstraaten
+Copyright:          Copyright © 2014-2025 Merijn Verstraaten
 
 License:            BSD-3-Clause
 License-File:       LICENSE
@@ -15,10 +15,11 @@ License-File:       LICENSE
 Category:           System
 Build-Type:         Simple
 Tested-With:        GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.4, GHC == 8.6.5,
-                    GHC == 8.8.4, GHC == 8.10.7, GHC == 9.0.2, GHC == 9.2.8,
-                    GHC == 9.4.5, GHC == 9.6.2
+                    GHC == 8.8.4, GHC == 8.10.7, GHC == 9.0.2, GHC == 9.2.7,
+                    GHC == 9.4.8, GHC == 9.6.6, GHC == 9.8.4, GHC == 9.10.1,
+                    GHC == 9.12.1
 
-Extra-Source-Files: CHANGELOG.md
+Extra-Doc-Files:    CHANGELOG.md
 
 Synopsis:           Conduit-based parallel streaming code for broadcast-chan
 
@@ -39,7 +40,7 @@ Library
                         ScopedTypeVariables
                         Trustworthy
 
-  Build-Depends:        base >= 4.8 && < 4.19
+  Build-Depends:        base >= 4.8 && < 4.22
                ,        broadcast-chan == 0.3.0.*
                ,        conduit >= 1.2 && < 1.4
                ,        resourcet >= 1.1 && < 1.3
@@ -53,10 +54,10 @@ Test-Suite conduit
   GHC-Options:          -Wall -Wno-unused-do-bind -threaded -with-rtsopts=-qg
   Hs-Source-Dirs:       tests
 
-  Build-Depends:        base
+  Build-Depends:        base >= 4.8 && < 4.22
                ,        broadcast-chan-conduit
                ,        broadcast-chan-tests
-               ,        containers >= 0.4 && < 0.7
+               ,        containers >= 0.4 && < 0.9
                ,        conduit >= 1.2 && < 1.4
 
 Source-Repository head
