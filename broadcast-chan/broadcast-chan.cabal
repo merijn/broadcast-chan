@@ -16,7 +16,8 @@ Category:           System
 Build-Type:         Simple
 Tested-With:        GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.4, GHC == 8.6.5,
                     GHC == 8.8.4, GHC == 8.10.7, GHC == 9.0.2, GHC == 9.2.7,
-                    GHC == 9.4.4, GHC == 9.6.1
+                    GHC == 9.4.8, GHC == 9.6.6, GHC == 9.8.4, GHC == 9.10.1,
+                    GHC == 9.12.1
 
 Extra-Source-Files: README.md
                   , CHANGELOG.md
@@ -101,7 +102,7 @@ Library
                         Trustworthy
                         TupleSections
 
-  Build-Depends:        base >= 4.8 && < 4.19
+  Build-Depends:        base >= 4.8 && < 4.22
                ,        transformers >= 0.2 && < 0.7
                ,        unliftio-core >= 0.1.1 && < 0.3
 
@@ -119,7 +120,7 @@ Common concurrent-benchmarks
   Build-Depends:        base
                ,        async >= 2.0 && < 2.3
                ,        criterion >= 1.2 && < 1.7
-               ,        deepseq >= 1.1 && < 1.5
+               ,        deepseq >= 1.1 && < 1.6
                ,        stm >= 2.4 && < 2.6
 
 Benchmark sync
