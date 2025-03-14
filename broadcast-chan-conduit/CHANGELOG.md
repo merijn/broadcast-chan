@@ -4,6 +4,8 @@
   `BroadcastChan.Conduit` and `BroadcastChan.Conduit.Throw`.
 * Add reexports for the new `tryReadBChan` in `BroadcastChan.Conduit` and
   `BroadcastChan.Conduit.Throw`.
+* Turned into a trivial re-export of broadcast-chan:conduit.
+* Deprecated.
 
 0.2.1.2 [2022.08.24]
 --------------------
