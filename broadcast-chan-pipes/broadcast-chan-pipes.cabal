@@ -16,7 +16,7 @@ Category:           System
 Build-Type:         Simple
 Tested-With:        GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.4, GHC == 8.6.5,
                     GHC == 8.8.4, GHC == 8.10.7, GHC == 9.0.2, GHC == 9.2.8,
-                    GHC == 9.4.5, GHC == 9.6.2
+                    GHC == 9.4.8, GHC == 9.6.4, GHC == 9.8.2
 
 Extra-Source-Files: CHANGELOG.md
 
@@ -38,7 +38,7 @@ Library
                         Safe
                         ScopedTypeVariables
 
-  Build-Depends:        base >= 4.8 && < 4.20
+  Build-Depends:        base >= 4.8 && < 4.21
                ,        broadcast-chan == 0.3.0.*
                ,        pipes >= 4.1.6 && < 4.4
                ,        pipes-safe >= 2.3.1 && < 2.4
