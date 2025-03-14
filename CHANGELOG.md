@@ -5,6 +5,8 @@
   `MonadIO`.
 * Add non-blocking `tryReadBChan` in `BroadcastChan` and `BroadcastChan.Throw`,
   fixes [#12](https://github.com/merijn/broadcast-chan/issues/12).
+* Absorb `broadcast-chan-tests`, `broadcast-chan-pipes`, and
+  `broadcast-chan-conduit` into `broadcast-chan` as public sub-libraries.
 
 0.2.1.2 [2022.08.24]
 --------------------
