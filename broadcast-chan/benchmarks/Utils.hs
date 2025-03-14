@@ -1,3 +1,4 @@
+import Prelude hiding (Foldable(..))
 import Control.Concurrent
 import Control.Monad (forM_)
 import Data.List (foldl')
