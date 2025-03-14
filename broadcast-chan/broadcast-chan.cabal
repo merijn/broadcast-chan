@@ -117,7 +117,7 @@ Common concurrent-benchmarks
 
   Other-Extensions:     BangPatterns
 
-  Build-Depends:        base
+  Build-Depends:        base >= 4.8 && < 4.22
                ,        async >= 2.0 && < 2.3
                ,        criterion >= 1.2 && < 1.7
                ,        deepseq >= 1.1 && < 1.6
@@ -155,7 +155,7 @@ Benchmark utilities
     GHC-Options:        -threaded -with-rtsopts=-qg
   Hs-Source-Dirs:       benchmarks
 
-  Build-Depends:        base
+  Build-Depends:        base >= 4.8 && < 4.22
                ,        broadcast-chan
 
 Source-Repository head

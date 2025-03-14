@@ -54,7 +54,7 @@ Test-Suite conduit
   GHC-Options:          -Wall -Wno-unused-do-bind -threaded -with-rtsopts=-qg
   Hs-Source-Dirs:       tests
 
-  Build-Depends:        base
+  Build-Depends:        base >= 4.8 && < 4.22
                ,        broadcast-chan-conduit
                ,        broadcast-chan-tests
                ,        containers >= 0.4 && < 0.7

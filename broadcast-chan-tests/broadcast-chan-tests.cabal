@@ -61,7 +61,7 @@ Test-Suite basic
   Main-Is:              Basic.hs
   GHC-Options:          -Wall -threaded -Wno-unused-do-bind -with-rtsopts=-qg
   Hs-Source-Dirs:       tests
-  Build-Depends:        base
+  Build-Depends:        base >= 4.8 && < 4.22
                ,        broadcast-chan
                ,        broadcast-chan-tests
                ,        foldl >= 1.4 && < 1.5
@@ -74,7 +74,7 @@ Test-Suite basic-unthreaded
   Main-Is:              Basic.hs
   GHC-Options:          -Wall -Wno-unused-do-bind
   Hs-Source-Dirs:       tests
-  Build-Depends:        base
+  Build-Depends:        base >= 4.8 && < 4.22
                ,        broadcast-chan
                ,        broadcast-chan-tests
                ,        foldl >= 1.4 && < 1.5
@@ -87,7 +87,7 @@ Test-Suite parallel-io
   Main-Is:              IOTest.hs
   GHC-Options:          -Wall -O2 -Wno-unused-do-bind -threaded -with-rtsopts=-qg
   Hs-Source-Dirs:       tests
-  Build-Depends:        base
+  Build-Depends:        base >= 4.8 && < 4.22
                ,        broadcast-chan
                ,        broadcast-chan-tests
                ,        containers >= 0.4 && < 0.7
