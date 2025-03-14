@@ -115,7 +115,8 @@ Library conduit
 
   Hs-Source-Dirs:       conduit
 
-  Other-Extensions:     NamedFieldPuns
+  Other-Extensions:     CPP
+                        NamedFieldPuns
                         Safe
                         ScopedTypeVariables
                         Trustworthy
@@ -123,7 +124,7 @@ Library conduit
   Build-Depends:        base >= 4.8 && < 4.22
                ,        broadcast-chan
                ,        conduit >= 1.2 && < 1.4
-               ,        resourcet >= 1.1 && < 1.3
+               ,        resourcet >= 1.1 && < 1.4
                ,        transformers >= 0.2 && < 0.7
                ,        unliftio-core >= 0.1 && < 0.3
 

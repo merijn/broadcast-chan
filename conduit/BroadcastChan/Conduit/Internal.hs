@@ -1,8 +1,10 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module BroadcastChan.Conduit.Internal (parMapM, parMapM_) where
 
+import Control.Exception (SomeException)
 import Control.Monad ((>=>))
 import Control.Monad.Trans.Resource (MonadResource)
 import qualified Control.Monad.Trans.Resource as Resource
@@ -18,11 +20,22 @@ import Data.Void (Void)
 import BroadcastChan.Extra (BracketOnError(..), Handler, ThreadBracket(..))
 import qualified BroadcastChan.Extra as Extra
 
+releaseWithException :: SomeException -> ReleaseType
+#if !MIN_VERSION_resourcet(1,3,0)
+releaseWithException _ = ReleaseException
+#else
+releaseWithException exc = ReleaseExceptionWith exc
+#endif
+
 bracketOnError :: MonadResource m => IO a -> (a -> IO ()) -> m r -> m r
 bracketOnError alloc clean work =
     allocateAcquire (mkAcquireType alloc cleanup) >>= const work
   where
+#if !MIN_VERSION_resourcet(1,3,0)
     cleanup x ReleaseException = clean x
+#else
+    cleanup x (ReleaseExceptionWith _) = clean x
+#endif
     cleanup _ _ = return ()
 
 -- | Create a conduit that processes inputs in parallel.
@@ -48,8 +61,8 @@ parMapM hnd threads workFun = do
     let threadBracket = ThreadBracket
             { setupFork = ResourceI.stateAlloc resourceState
             , cleanupFork = ResourceI.stateCleanup ReleaseNormal resourceState
-            , cleanupForkError =
-                ResourceI.stateCleanup ReleaseException resourceState
+            , cleanupForkError = \exc ->
+                ResourceI.stateCleanup (releaseWithException exc) resourceState
             }
 
     Bracket{allocate,cleanup,action} <- Extra.runParallelWith
@@ -90,8 +103,8 @@ parMapM_ hnd threads workFun = do
     let threadBracket = ThreadBracket
             { setupFork = ResourceI.stateAlloc resourceState
             , cleanupFork = ResourceI.stateCleanup ReleaseNormal resourceState
-            , cleanupForkError =
-                ResourceI.stateCleanup ReleaseException resourceState
+            , cleanupForkError = \exc ->
+                ResourceI.stateCleanup (releaseWithException exc) resourceState
             }
 
     Bracket{allocate,cleanup,action} <- Extra.runParallelWith_
