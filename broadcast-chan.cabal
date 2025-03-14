@@ -153,6 +153,48 @@ Library test
   if impl(ghc <= 7.10)
     Build-Depends:      transformers >= 0.2 && < 0.7
 
+Common basic
+  Default-Language:     Haskell2010
+  GHC-Options:          -Wall -Wno-unused-do-bind
+  Hs-Source-Dirs:       tests
+  Build-Depends:        base >= 4.8 && < 4.22
+               ,        broadcast-chan
+               ,        broadcast-chan:test
+               ,        foldl >= 1.4 && < 1.5
+               ,        monad-loops >= 0.4.3 && < 0.5
+               ,        random >= 1.1 && < 1.4
+
+Test-Suite basic
+  Import:               basic
+  Type:                 exitcode-stdio-1.0
+  Main-Is:              Basic.hs
+  GHC-Options:          -threaded -with-rtsopts=-qg
+
+Test-Suite basic-unthreaded
+  Import:               basic
+  Type:                 exitcode-stdio-1.0
+  Main-Is:              Basic.hs
+
+Common parallel-io
+  Default-Language:     Haskell2010
+  GHC-Options:          -Wall -O2 -Wno-unused-do-bind
+  Hs-Source-Dirs:       tests
+  Build-Depends:        base >= 4.8 && < 4.22
+               ,        broadcast-chan
+               ,        broadcast-chan:test
+               ,        containers >= 0.4 && < 0.9
+
+Test-Suite parallel-io
+  Import:               parallel-io
+  Type:                 exitcode-stdio-1.0
+  Main-Is:              IOTest.hs
+  GHC-Options:          -threaded -with-rtsopts=-qg
+
+Test-Suite parallel-io-unthreaded
+  Import:               parallel-io
+  Type:                 exitcode-stdio-1.0
+  Main-Is:              IOTest.hs
+
 Test-Suite pipes-test
   Default-Language:     Haskell2010
   Type:                 exitcode-stdio-1.0
@@ -218,48 +260,6 @@ Benchmark utilities
 
   Build-Depends:        base >= 4.8 && < 4.22
                ,        broadcast-chan
-
-Common basic
-  Default-Language:     Haskell2010
-  GHC-Options:          -Wall -Wno-unused-do-bind
-  Hs-Source-Dirs:       tests
-  Build-Depends:        base >= 4.8 && < 4.22
-               ,        broadcast-chan
-               ,        broadcast-chan:test
-               ,        foldl >= 1.4 && < 1.5
-               ,        monad-loops >= 0.4.3 && < 0.5
-               ,        random >= 1.1 && < 1.4
-
-Test-Suite basic
-  Import:               basic
-  Type:                 exitcode-stdio-1.0
-  Main-Is:              Basic.hs
-  GHC-Options:          -threaded -with-rtsopts=-qg
-
-Test-Suite basic-unthreaded
-  Import:               basic
-  Type:                 exitcode-stdio-1.0
-  Main-Is:              Basic.hs
-
-Common parallel-io
-  Default-Language:     Haskell2010
-  GHC-Options:          -Wall -O2 -Wno-unused-do-bind
-  Hs-Source-Dirs:       tests
-  Build-Depends:        base >= 4.8 && < 4.22
-               ,        broadcast-chan
-               ,        broadcast-chan:test
-               ,        containers >= 0.4 && < 0.9
-
-Test-Suite parallel-io
-  Import:               parallel-io
-  Type:                 exitcode-stdio-1.0
-  Main-Is:              IOTest.hs
-  GHC-Options:          -threaded -with-rtsopts=-qg
-
-Test-Suite parallel-io-unthreaded
-  Import:               parallel-io
-  Type:                 exitcode-stdio-1.0
-  Main-Is:              IOTest.hs
 
 Source-Repository head
   Type:     git
