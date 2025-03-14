@@ -115,14 +115,14 @@ data BracketOnError m r
 -- care not to leak resources in these cases. In other words, IFF 'setupFork'
 -- succeeds then this library will ensure the corresponding cleanup runs.
 --
--- @since 0.2.1
+-- @since 0.3.0
 data ThreadBracket
     = ThreadBracket
     { setupFork :: IO ()
     -- ^ Setup action to run before spawning a new thread.
     , cleanupFork :: IO ()
     -- ^ Normal cleanup action upon thread termination.
-    , cleanupForkError :: IO ()
+    , cleanupForkError :: SomeException -> IO ()
     -- ^ Exceptional cleanup action in case thread terminates due to an
     -- exception.
     }
@@ -131,7 +131,7 @@ noopBracket :: ThreadBracket
 noopBracket = ThreadBracket
     { setupFork = return ()
     , cleanupFork = return ()
-    , cleanupForkError = return ()
+    , cleanupForkError = const (return ())
     }
 
 -- | Convenience function for changing the monad the exception handler runs in.
@@ -191,9 +191,9 @@ parallelCore hndl threads onDrop threadBracket f = liftIO $ do
                 signalQSemN shutdownSem 1
                 case exit of
                     Left exc
-                      | Just Shutdown <- fromException exc -> cleanupForkError
+                      | Just Shutdown <- fromException exc -> cleanupForkError exc
                       | otherwise -> do
-                          cleanupForkError
+                          cleanupForkError exc
                           reportErr <- tryTakeMVar excMVar
                           case reportErr of
                               Nothing -> return ()
