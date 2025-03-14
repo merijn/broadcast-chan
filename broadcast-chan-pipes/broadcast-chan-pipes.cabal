@@ -24,39 +24,15 @@ Extra-Doc-Files:    CHANGELOG.md
 Synopsis:           Pipes-based parallel streaming code for broadcast-chan
 
 Description:
-    __WARNING:__ While the code in this library should be fairly stable and
-    production, the API is something I'm still working on. API changes will
-    follow the PVP, but __expect__ breaking API changes in future versions!
+    __WARNING: As of 0.3.0 this package is deprecated, use the sublibrary of
+    broadcast-chan directly!__
 
 Library
   Default-Language:     Haskell2010
-  GHC-Options:          -Wall -O2 -Wno-unused-do-bind
-  Exposed-Modules:      BroadcastChan.Pipes
+  Reexported-Modules:   BroadcastChan.Pipes,
                         BroadcastChan.Pipes.Throw
-  Other-Modules:        BroadcastChan.Pipes.Internal
 
-  Other-Extensions:     NamedFieldPuns
-                        Safe
-                        ScopedTypeVariables
-
-  Build-Depends:        base >= 4.8 && < 4.22
-               ,        broadcast-chan == 0.3.0.*
-               ,        pipes >= 4.1.6 && < 4.4
-               ,        pipes-safe >= 2.3.1 && < 2.4
-
-Test-Suite pipes
-  Default-Language:     Haskell2010
-  Type:                 exitcode-stdio-1.0
-  Main-Is:              PipeTest.hs
-  GHC-Options:          -Wall -Wno-unused-do-bind -threaded -with-rtsopts=-qg
-  Hs-Source-Dirs:       tests
-  Build-Depends:        base >= 4.8 && < 4.22
-               ,        broadcast-chan-pipes
-               ,        broadcast-chan:test
-               ,        containers >= 0.4 && < 0.9
-               ,        foldl >= 1.0.4 && < 1.5
-               ,        pipes >= 4.1.6 && < 4.4
-               ,        pipes-safe >= 2.3.1 && < 2.4
+  Build-Depends:        broadcast-chan:pipes
 
 Source-Repository head
   Type:     git
