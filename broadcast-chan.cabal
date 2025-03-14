@@ -105,6 +105,25 @@ Library
                ,        transformers >= 0.2 && < 0.7
                ,        unliftio-core >= 0.1.1 && < 0.3
 
+Library pipes
+  Visibility:           public
+  Default-Language:     Haskell2010
+  GHC-Options:          -Wall -O2 -Wno-unused-do-bind
+  Exposed-Modules:      BroadcastChan.Pipes
+                        BroadcastChan.Pipes.Throw
+  Other-Modules:        BroadcastChan.Pipes.Internal
+
+  Hs-Source-Dirs:       pipes
+
+  Other-Extensions:     NamedFieldPuns
+                        Safe
+                        ScopedTypeVariables
+
+  Build-Depends:        base >= 4.8 && < 4.22
+               ,        broadcast-chan
+               ,        pipes >= 4.1.6 && < 4.4
+               ,        pipes-safe >= 2.3.1 && < 2.4
+
 Library test
   Visibility:           public
   Default-Language:     Haskell2010
@@ -133,6 +152,20 @@ Library test
 
   if impl(ghc <= 7.10)
     Build-Depends:      transformers >= 0.2 && < 0.7
+
+Test-Suite pipes-test
+  Default-Language:     Haskell2010
+  Type:                 exitcode-stdio-1.0
+  Main-Is:              PipeTest.hs
+  GHC-Options:          -Wall -Wno-unused-do-bind -threaded -with-rtsopts=-qg
+  Hs-Source-Dirs:       tests
+  Build-Depends:        base >= 4.8 && < 4.22
+               ,        broadcast-chan:pipes
+               ,        broadcast-chan:test
+               ,        containers >= 0.4 && < 0.9
+               ,        foldl >= 1.0.4 && < 1.5
+               ,        pipes >= 4.1.6 && < 4.4
+               ,        pipes-safe >= 2.3.1 && < 2.4
 
 Common concurrent-benchmarks
   Default-Language:     Haskell2010

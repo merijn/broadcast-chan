@@ -4,6 +4,8 @@
   `BroadcastChan.Pipes` and `BroadcastChan.Pipes.Throw`.
 * Add reexports for the new `tryReadBChan` in `BroadcastChan.Pipes` and
   `BroadcastChan.Pipes.Throw`.
+* Turned into a trivial re-export of broadcast-chan:pipes.
+* Deprecated.
 
 0.2.1.2 [2022.08.24]
 --------------------
