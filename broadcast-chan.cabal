@@ -148,7 +148,6 @@ Library pipes
                ,        pipes-safe >= 2.3.1 && < 2.4
 
 Library test
-  Visibility:           public
   Default-Language:     Haskell2010
   GHC-Options:          -Wall -O2 -Wno-unused-do-bind
   Exposed-Modules:      BroadcastChan.Test
