@@ -32,7 +32,7 @@ Library
   Reexported-Modules:   BroadcastChan.Pipes,
                         BroadcastChan.Pipes.Throw
 
-  Build-Depends:        broadcast-chan:pipes
+  Build-Depends:        broadcast-chan:pipes == 0.3.0
 
 Source-Repository head
   Type:     git

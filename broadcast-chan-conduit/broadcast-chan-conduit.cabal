@@ -32,7 +32,7 @@ Library
   Reexported-Modules:   BroadcastChan.Conduit,
                         BroadcastChan.Conduit.Throw
 
-  Build-Depends:        broadcast-chan:conduit
+  Build-Depends:        broadcast-chan:conduit == 0.3.0
 
 Source-Repository head
   Type:     git
