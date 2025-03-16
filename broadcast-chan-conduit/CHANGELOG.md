@@ -1,11 +1,12 @@
-0.3.0 [????.??.??]
+0.3.0 [2025.03.16]
 ------------------
 * Add missing reexports of `readBChan`, `writeBChan`, and `BChanError` to
   `BroadcastChan.Conduit` and `BroadcastChan.Conduit.Throw`.
 * Add reexports for the new `tryReadBChan` in `BroadcastChan.Conduit` and
   `BroadcastChan.Conduit.Throw`.
 * Turned into a trivial re-export of broadcast-chan:conduit.
-* Deprecated.
+* `broadcast-chan-conduit` is deprecated in favour of `broadcast-chan:conduit`
+  (sub-library of the `broadcast-chan` package).
 
 0.2.1.2 [2022.08.24]
 --------------------

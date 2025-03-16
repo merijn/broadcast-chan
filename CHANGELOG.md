@@ -1,4 +1,4 @@
-0.3.0 [????.??.??]
+0.3.0 [2025.03.16]
 ------------------
 * Fixed Haddock links.
 * Generalised `readBChan`/`writeBChan` in `BroadcastChan.Throw` to use
@@ -7,6 +7,9 @@
   fixes [#12](https://github.com/merijn/broadcast-chan/issues/12).
 * Absorb `broadcast-chan-tests`, `broadcast-chan-pipes`, and
   `broadcast-chan-conduit` into `broadcast-chan` as public sub-libraries.
+* `ThreadBracket` in `BroadcastChan.Extra` has it's signature changed to
+  support resourcet-1.3. Now takes `SomeException` as argument for
+  `cleanupForkError`, existing code can simply ignore this argument.
 
 0.2.1.2 [2022.08.24]
 --------------------

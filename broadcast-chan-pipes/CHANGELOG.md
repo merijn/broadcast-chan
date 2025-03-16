@@ -1,11 +1,12 @@
-0.3.0 [????.??.??]
+0.3.0 [2025.03.16]
 ------------------
 * Add missing reexports of `readBChan`, `writeBChan`, and `BChanError` to
   `BroadcastChan.Pipes` and `BroadcastChan.Pipes.Throw`.
 * Add reexports for the new `tryReadBChan` in `BroadcastChan.Pipes` and
   `BroadcastChan.Pipes.Throw`.
 * Turned into a trivial re-export of broadcast-chan:pipes.
-* Deprecated.
+* `broadcast-chan-pipes` is deprecated in favour of `broadcast-chan:pipes`
+  (sub-library of the `broadcast-chan` package).
 
 0.2.1.2 [2022.08.24]
 --------------------
