@@ -1,4 +1,4 @@
-packages: broadcast-chan.cabal ./*/*.cabal
+packages: broadcast-chan.cabal
 jobs: 8
 solver: modular
 doc-index-file: $datadir/doc/$arch-$os-$compiler/index.html

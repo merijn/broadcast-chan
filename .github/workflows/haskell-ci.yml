@@ -202,8 +202,6 @@ jobs:
         run: |
           touch cabal.project
           echo "packages: $GITHUB_WORKSPACE/source/." >> cabal.project
-          echo "packages: $GITHUB_WORKSPACE/source/./broadcast-chan-pipes" >> cabal.project
-          echo "packages: $GITHUB_WORKSPACE/source/./broadcast-chan-conduit" >> cabal.project
           cat cabal.project
       - name: sdist
         run: |
@@ -217,21 +215,11 @@ jobs:
         run: |
           PKGDIR_broadcast_chan="$(find "$GITHUB_WORKSPACE/unpacked" -maxdepth 1 -type d -regex '.*/broadcast-chan-[0-9.]*')"
           echo "PKGDIR_broadcast_chan=${PKGDIR_broadcast_chan}" >> "$GITHUB_ENV"
-          PKGDIR_broadcast_chan_pipes="$(find "$GITHUB_WORKSPACE/unpacked" -maxdepth 1 -type d -regex '.*/broadcast-chan-pipes-[0-9.]*')"
-          echo "PKGDIR_broadcast_chan_pipes=${PKGDIR_broadcast_chan_pipes}" >> "$GITHUB_ENV"
-          PKGDIR_broadcast_chan_conduit="$(find "$GITHUB_WORKSPACE/unpacked" -maxdepth 1 -type d -regex '.*/broadcast-chan-conduit-[0-9.]*')"
-          echo "PKGDIR_broadcast_chan_conduit=${PKGDIR_broadcast_chan_conduit}" >> "$GITHUB_ENV"
           rm -f cabal.project cabal.project.local
           touch cabal.project
           touch cabal.project.local
           echo "packages: ${PKGDIR_broadcast_chan}" >> cabal.project
-          echo "packages: ${PKGDIR_broadcast_chan_pipes}" >> cabal.project
-          echo "packages: ${PKGDIR_broadcast_chan_conduit}" >> cabal.project
           if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then echo "package broadcast-chan" >> cabal.project ; fi
-          if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then echo "    ghc-options: -Werror=missing-methods" >> cabal.project ; fi
-          if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then echo "package broadcast-chan-pipes" >> cabal.project ; fi
-          if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then echo "    ghc-options: -Werror=missing-methods" >> cabal.project ; fi
-          if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then echo "package broadcast-chan-conduit" >> cabal.project ; fi
           if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then echo "    ghc-options: -Werror=missing-methods" >> cabal.project ; fi
           cat >> cabal.project <<EOF
           allow-newer:  pipes-safe:base
@@ -239,17 +227,11 @@ jobs:
 
           package broadcast-chan
             ghc-options: -Wcompat -Werror
-
-          package broadcast-chan-pipes
-            ghc-options: -Wcompat -Werror
-
-          package broadcast-chan-conduit
-            ghc-options: -Wcompat -Werror
           EOF
           if $HEADHACKAGE; then
           echo "allow-newer: $($HCPKG list --simple-output | sed -E 's/([a-zA-Z-]+)-[0-9.]+/*:\1,/g')" >> cabal.project
           fi
-          $HCPKG list --simple-output --names-only | perl -ne 'for (split /\s+/) { print "constraints: any.$_ installed\n" unless /^(broadcast-chan|broadcast-chan-conduit|broadcast-chan-pipes)$/; }' >> cabal.project.local
+          $HCPKG list --simple-output --names-only | perl -ne 'for (split /\s+/) { print "constraints: any.$_ installed\n" unless /^(broadcast-chan)$/; }' >> cabal.project.local
           cat cabal.project
           cat cabal.project.local
       - name: dump install plan
@@ -278,10 +260,6 @@ jobs:
       - name: cabal check
         run: |
           cd ${PKGDIR_broadcast_chan} || false
-          ${CABAL} -vnormal check
-          cd ${PKGDIR_broadcast_chan_pipes} || false
-          ${CABAL} -vnormal check
-          cd ${PKGDIR_broadcast_chan_conduit} || false
           ${CABAL} -vnormal check
       - name: haddock
         run: |
