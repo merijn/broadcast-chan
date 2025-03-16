@@ -32,7 +32,7 @@ jobs:
             compilerKind: ghc
             compilerVersion: 9.12.1
             setup-method: ghcup
-            allow-failure: true
+            allow-failure: false
           - compiler: ghc-9.10.1
             compilerKind: ghc
             compilerVersion: 9.10.1
@@ -234,6 +234,7 @@ jobs:
           if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then echo "package broadcast-chan-conduit" >> cabal.project ; fi
           if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then echo "    ghc-options: -Werror=missing-methods" >> cabal.project ; fi
           cat >> cabal.project <<EOF
+          allow-newer:  pipes-safe:base
           optimization: 2
 
           package broadcast-chan
