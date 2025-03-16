@@ -7,5 +7,8 @@ project-name: broadcast-chan
 -- Add ghc-head job
 ghc-head: True
 
+-- Fails due to lack of pipes-safe support for 9.12
+allow-failures: >=9.12
+
 -- Jobs to additionally build with OSX
 macos-jobs: True
