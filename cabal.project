@@ -6,3 +6,5 @@ optimization: 2
 documentation: True
 tests: True
 benchmarks: True
+
+allow-newer: pipes-safe:base
