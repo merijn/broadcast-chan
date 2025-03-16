@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 -------------------------------------------------------------------------------
@@ -45,7 +44,6 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Tagged (Tagged, untag)
-import Data.Typeable (Typeable)
 import Options.Applicative (flag', long, help)
 import System.Clock
     (Clock(Monotonic), TimeSpec, diffTimeSpec, getTime, toNanoSecs)
@@ -62,7 +60,7 @@ import Test.Tasty.Options
 import BroadcastChan.Extra (Action(..), Handler(..), mapHandler)
 import ParamTree
 
-data TestException = TestException deriving (Eq, Show, Typeable)
+data TestException = TestException deriving (Eq, Show)
 instance Exception TestException
 
 infix 0 @?
@@ -312,7 +310,7 @@ retryTest seqImpl parImpl = withRetryCheck $ \getRetryCheck ->
         return val
 
 newtype SlowTests = SlowTests Bool
-  deriving (Eq, Ord, Typeable)
+  deriving (Eq, Ord)
 
 instance IsOption SlowTests where
   defaultValue = SlowTests False

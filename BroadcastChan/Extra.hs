@@ -1,5 +1,4 @@
 {-# OPTIONS_HADDOCK not-home #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Safe #-}
@@ -41,7 +40,6 @@ import qualified Control.Exception as Exc
 import Control.Monad ((>=>), join, replicateM, void)
 import Control.Monad.Trans.Cont (ContT(..))
 import Control.Monad.IO.Unlift (MonadIO(..))
-import Data.Typeable (Typeable)
 import System.Mem.Weak (Weak, deRefWeak)
 
 import BroadcastChan.Internal
@@ -66,7 +64,7 @@ unsafeWriteBChan (BChan writeVar) val = liftIO $ do
     putMVar writeVar new_hole
 {-# INLINE unsafeWriteBChan #-}
 
-data Shutdown = Shutdown deriving (Show, Typeable)
+data Shutdown = Shutdown deriving (Show)
 instance Exception Shutdown
 
 -- | Action to take when an exception occurs while processing an element.

@@ -93,7 +93,6 @@ Library
   Other-Modules:        BroadcastChan.Internal
 
   Other-Extensions:     DataKinds
-                        DeriveDataTypeable
                         KindSignatures
                         NamedFieldPuns
                         Safe
@@ -153,8 +152,7 @@ Library test
   Exposed-Modules:      BroadcastChan.Test
   Hs-Source-Dirs:       broadcast-chan-test
 
-  Other-Extensions:     DeriveDataTypeable
-                        ScopedTypeVariables
+  Other-Extensions:     ScopedTypeVariables
                         Trustworthy
 
   Build-Depends:        base >= 4.8 && < 4.22

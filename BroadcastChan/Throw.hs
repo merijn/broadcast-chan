@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE Safe #-}
 -------------------------------------------------------------------------------
 -- |
@@ -48,7 +47,6 @@ module BroadcastChan.Throw
 import Control.Monad (when)
 import Control.Monad.IO.Unlift (MonadIO(..))
 import Control.Exception (Exception, throwIO)
-import Data.Typeable (Typeable)
 
 import BroadcastChan hiding (writeBChan, readBChan, tryReadBChan)
 import qualified BroadcastChan as Internal
@@ -59,7 +57,7 @@ import qualified BroadcastChan as Internal
 data BChanError
     = WriteFailed   -- ^ Attempted to write to closed 'BroadcastChan'
     | ReadFailed    -- ^ Attempted to read from an empty closed 'BroadcastChan'
-    deriving (Eq, Read, Show, Typeable)
+    deriving (Eq, Read, Show)
 
 instance Exception BChanError
 
